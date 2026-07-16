@@ -6,6 +6,7 @@ import { Teil1, Teil2, Teil3, Teil4Prompt, WordCount, SelfAssess } from './Tasks
 import { db, saveGeneratedTask, type GeneratedTaskRecord } from '../db'
 import { generateTask } from '../ai/generateTask'
 import { AiWritingScore } from './AiScore'
+import { openLayer, backLayer } from '../appHistory'
 import {
   Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle, BackLink, Btn, FootActions, Reveal,
 } from './ui/kit'
@@ -24,6 +25,19 @@ const PARTS: { n: PartNum; icon: string; title: string; sub: string }[] = [
 export default function Practice() {
   const [part, setPart] = useState<PartNum | null>(null)
   const [idx, setIdx] = useState<number | null>(null)
+
+  // Zurück-Taste/-Geste: Ebenen (Teil → Aufgabe) einzeln schließen statt Seite verlassen
+  const openPart = (n: PartNum) => {
+    setPart(n)
+    openLayer(() => {
+      setPart(null)
+      setIdx(null)
+    })
+  }
+  const openTask = (i: number) => {
+    setIdx(i)
+    openLayer(() => setIdx(null))
+  }
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
 
@@ -41,7 +55,7 @@ export default function Practice() {
         <Box mt="$4">
           <TileGrid>
             {PARTS.map((p) => (
-              <Tile key={p.n} onPress={() => setPart(p.n)}>
+              <Tile key={p.n} onPress={() => openPart(p.n)}>
                 <TileEmoji>{p.icon}</TileEmoji>
                 <TileTitle>{p.title}</TileTitle>
                 <Muted>{DATA[('teil' + p.n) as TeilKey].length} Aufgaben · {p.sub}</Muted>
@@ -64,7 +78,7 @@ export default function Practice() {
     try {
       const task = await generateTask({ data: { part } })
       await saveGeneratedTask(part, task)
-      setIdx(pool.length) // die neue Aufgabe steht am Ende des kombinierten Pools
+      openTask(pool.length) // die neue Aufgabe steht am Ende des kombinierten Pools
     } catch (err) {
       setGenError(err instanceof Error ? err.message : 'Die Aufgabe konnte nicht erstellt werden.')
     } finally {
@@ -75,7 +89,7 @@ export default function Practice() {
   if (idx === null) {
     return (
       <>
-        <BackLink onPress={() => setPart(null)} />
+        <BackLink onPress={backLayer} />
         <Heading size="lg" color="$primary600" mb="$3">Teil {part} – Aufgabe wählen</Heading>
         <TileGrid>
           <Tile onPress={generating ? undefined : generate} disabled={generating}>
@@ -84,7 +98,7 @@ export default function Practice() {
             <Muted>Gemini erstellt eine neue Teil-{part}-Aufgabe im gleichen Format.</Muted>
           </Tile>
           {pool.map((d, i) => (
-            <Tile key={d.id ?? i} onPress={() => setIdx(i)}>
+            <Tile key={d.id ?? i} onPress={() => openTask(i)}>
               <TileTitle>{d.set}{d.set === 'KI-generiert' && ' 🤖'}</TileTitle>
               <Muted>
                 {part === 2 ? (d as Teil2Task).title : (((d as Teil1Task | Teil4Task).situation ?? (d as Teil3Task).text) as string).slice(0, 80) + '…'}
@@ -103,7 +117,7 @@ export default function Practice() {
 
   return (
     <>
-      <BackLink onPress={() => setIdx(null)}>← andere Aufgabe wählen</BackLink>
+      <BackLink onPress={backLayer}>← andere Aufgabe wählen</BackLink>
       <PracticeTask key={`${part}-${idx}`} part={part} d={pool[idx]} />
     </>
   )

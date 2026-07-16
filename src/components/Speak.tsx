@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
+import { openLayer, backLayer } from '../appHistory'
 import { DATA } from '../data/content'
 import { TranslateZone } from './useWordTranslate'
 import { SpeakPractice } from './SpeakPractice'
@@ -16,6 +17,12 @@ type Sub = 't5' | 't6' | 't7' | 'rm' | null
 export default function Speak() {
   const [sub, setSub] = useState<Sub>(null)
 
+  // Zurück-Taste/-Geste schließt den Unterbereich statt die Seite zu verlassen
+  const openSub = (s: Exclude<Sub, null>) => {
+    setSub(s)
+    openLayer(() => setSub(null))
+  }
+
   if (sub === null) {
     return (
       <>
@@ -23,22 +30,22 @@ export default function Speak() {
         <Muted>Übe laut! Sprich deine Antworten aus, bevor du die Musterlösungen liest.</Muted>
         <Box mt="$4">
           <TileGrid>
-            <Tile onPress={() => setSub('t5')}>
+            <Tile onPress={() => openSub('t5')}>
               <TileEmoji>👋</TileEmoji>
               <TileTitle>Teil 5 · Kennenlernen</TileTitle>
               <Muted>{DATA.teil5.length} typische Fragen als Karten – mit Musterantworten (ca. 3 Min.)</Muted>
             </Tile>
-            <Tile onPress={() => setSub('t6')}>
+            <Tile onPress={() => openSub('t6')}>
               <TileEmoji>📷</TileEmoji>
               <TileTitle>Teil 6 · Über ein Foto sprechen</TileTitle>
               <Muted>Die 3 Originalfotos aus dem Modelltest (ca. 6 Min.)</Muted>
             </Tile>
-            <Tile onPress={() => setSub('t7')}>
+            <Tile onPress={() => openSub('t7')}>
               <TileEmoji>⚖️</TileEmoji>
               <TileTitle>Teil 7 · Eine Situation besprechen</TileTitle>
               <Muted>{DATA.teil7.length} Situationen mit Vorteilen & Nachteilen (ca. 6 Min.)</Muted>
             </Tile>
-            <Tile onPress={() => setSub('rm')}>
+            <Tile onPress={() => openSub('rm')}>
               <TileEmoji>💬</TileEmoji>
               <TileTitle>Redemittel</TileTitle>
               <Muted>Nützliche Sätze für Foto, Meinung und Nachricht</Muted>
@@ -50,7 +57,7 @@ export default function Speak() {
   }
 
   const back = (
-    <Pressable onPress={() => setSub(null)} mb="$3.5">
+    <Pressable onPress={backLayer} mb="$3.5">
       <Text color="$primary600" fontWeight="$semibold" size="sm">← zurück</Text>
     </Pressable>
   )

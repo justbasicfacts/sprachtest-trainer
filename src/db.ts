@@ -21,7 +21,12 @@ export interface ExamResult {
   test: string
   lesen: number
   schreiben: number
+  /** Mündlicher Teil (0-15), nur wenn der Sprechteil absolviert wurde */
+  sprechen?: number
   total: number
+  /** Maximalpunktzahl des Ergebnisses: 15 (nur schriftlich) oder 30 (mit Sprechen).
+      Ältere Einträge haben kein max-Feld → 15. */
+  max?: number
   ts: number
 }
 

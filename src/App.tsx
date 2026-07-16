@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { motion } from 'motion/react'
+import { clearLayers } from './appHistory'
 import { db, seedVocab, type ExamResult } from './db'
 import Practice from './components/Practice'
 import Exam from './components/Exam'
@@ -35,6 +36,7 @@ export default function App() {
   }, [])
 
   const go = (v: TabId) => {
+    clearLayers() // offene Unter-Ebenen (Teil/Aufgabe/Prüfung) samt History-Einträgen verwerfen
     setExamActive(false)
     setView(v)
     window.scrollTo(0, 0)
@@ -222,16 +224,20 @@ function Home({ go }: { go: (v: TabId) => void }) {
         <AppCard>
           <CardTitle>📈 Deine letzten Prüfungen</CardTitle>
           <VStack gap="$0">
-            {hist.map((r) => (
-              <HStack key={r.id} justifyContent="space-between" borderTopWidth="$1" borderTopColor="$borderLight200" py="$2">
-                <Text size="sm">
-                  {r.date} · {r.test}
-                </Text>
-                <Text fontWeight="$bold" color={r.total >= 7.5 ? '$success600' : '$error600'}>
-                  {r.total} / 15 P
-                </Text>
-              </HStack>
-            ))}
+            {hist.map((r) => {
+              const max = r.max ?? 15
+              const pass = r.total >= (max === 30 ? 18 : 7.5)
+              return (
+                <HStack key={r.id} justifyContent="space-between" borderTopWidth="$1" borderTopColor="$borderLight200" py="$2">
+                  <Text size="sm">
+                    {r.date} · {r.test}{max === 30 ? ' · mit Sprechen' : ''}
+                  </Text>
+                  <Text fontWeight="$bold" color={pass ? '$success600' : '$error600'}>
+                    {r.total} / {max} P
+                  </Text>
+                </HStack>
+              )
+            })}
           </VStack>
         </AppCard>
       )}

@@ -69,8 +69,12 @@ export function Teil2({ d, ans, onPick, mode }: Teil2Props) {
                 <Text flex={1} sx={{ minWidth: 200 }}>
                   <Text fontWeight="$bold">{'abcd'[i]}</Text> &nbsp;{it.s}
                 </Text>
-                <RfButton label="richtig" active={given === 1} state={revealed ? (corr === 1 ? 'correct' : given === 1 ? 'wrong' : 'none') : 'none'} disabled={revealed} onPress={() => onPick(i, 1)} />
-                <RfButton label="falsch" active={given === 0} state={revealed ? (corr === 0 ? 'correct' : given === 0 ? 'wrong' : 'none') : 'none'} disabled={revealed} onPress={() => onPick(i, 0)} />
+                {/* Als Paar gruppiert, damit die beiden Buttons beim Umbruch (Handy)
+                    zusammen in die nächste Zeile wandern statt auseinanderzureißen */}
+                <HStack gap="$2.5">
+                  <RfButton label="richtig" active={given === 1} state={revealed ? (corr === 1 ? 'correct' : given === 1 ? 'wrong' : 'none') : 'none'} disabled={revealed} onPress={() => onPick(i, 1)} />
+                  <RfButton label="falsch" active={given === 0} state={revealed ? (corr === 0 ? 'correct' : given === 0 ? 'wrong' : 'none') : 'none'} disabled={revealed} onPress={() => onPick(i, 0)} />
+                </HStack>
               </HStack>
               {revealed && <Feedback ok={given === corr} unanswered={given === undefined} text={it.e} />}
             </Box>

@@ -148,3 +148,87 @@ export async function scoreSpeaking(input: {
     zodSchema,
   })
 }
+
+/* ------------------- Prüfungsmodus: Punkte statt Übungs-Feedback ------------------- */
+
+export interface SpeakingPartScore {
+  points: number
+  feedback: string
+  transcript?: string
+}
+
+const EXAM_SYSTEM_PROMPT =
+  'Du bist Prüfer für den mündlichen Teil des Berliner Sprachtests für die Einbürgerung (Deutsch-Niveau B1) ' +
+  'und vergibst Punkte wie in der echten Prüfung. Bewerte Aufgabenerfüllung, Verständlichkeit, Wortschatz und ' +
+  'Grammatik auf B1-Niveau. Gesprochene Sprache darf einfach sein - kleine Fehler kosten wenig, solange die ' +
+  'Antwort verständlich ist und die Aufgabe erfüllt wird. Keine oder eine unverständliche Antwort = 0 Punkte. ' +
+  'Gib dein Feedback auf einfachem, freundlichem Deutsch.'
+
+/** Bewertet EINE mündliche Prüfungsaufgabe mit Punkten (0 bis maxPoints). */
+export async function scoreSpeakingExamPart(input: {
+  data: {
+    context: string
+    criteria: string[]
+    maxPoints: number
+    transcript?: string
+    audio?: { mimeType: string; base64: string }
+  }
+}): Promise<SpeakingPartScore> {
+  const { context, criteria, maxPoints, transcript, audio } = input.data
+  const hasAudio = !!audio
+  const wantTranscript = hasAudio && !transcript
+
+  const properties: GeminiSchema = {
+    points: {
+      type: 'INTEGER',
+      description: `Punkte von 0 bis ${maxPoints} für diese Aufgabe, wie ein echter Prüfer sie vergeben würde`,
+    },
+    feedback: {
+      type: 'STRING',
+      description: 'Kurze Begründung der Punktzahl + 1 konkreter Verbesserungstipp, auf einfachem Deutsch (2-3 Sätze)',
+    },
+  }
+  const required = ['points', 'feedback']
+  if (wantTranscript) {
+    properties.transcript = { type: 'STRING', description: 'Wörtliche Transkription dessen, was gesagt wurde' }
+    required.push('transcript')
+  }
+
+  const zodSchema = z.object({
+    points: z.number(),
+    feedback: z.string(),
+    transcript: z.string().optional(),
+  })
+
+  let user =
+    `Prüfungsaufgabe: ${context}\n\n` +
+    `Bewertungskriterien:\n${criteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n` +
+    `Maximal ${maxPoints} Punkte.\n\n`
+
+  if (hasAudio) {
+    user += 'Die gesprochene Antwort ist als Audioaufnahme angehängt. Analysiere die Aufnahme direkt.\n'
+    if (transcript) {
+      user += `Zur Orientierung das (evtl. fehlerhafte) Transkript der Browser-Spracherkennung:\n"""\n${transcript}\n"""\n`
+    } else {
+      user += 'Transkribiere zuerst wörtlich, was gesagt wurde (Feld "transcript").\n'
+    }
+  } else {
+    user +=
+      'Die Antwort liegt als automatisches Transkript vor (Satzzeichen/Großschreibung fehlen erkennungsbedingt - nicht werten):\n' +
+      `"""\n${transcript}\n"""\n`
+  }
+  user += `\nVergib die Punkte (0-${maxPoints}) und begründe kurz.`
+
+  const raw = await geminiJson({
+    model: 'gemini-3.5-flash',
+    fallbackModel: 'gemini-3.1-flash-lite',
+    timeoutMs: hasAudio ? 90_000 : 60_000,
+    system: EXAM_SYSTEM_PROMPT,
+    user,
+    audio,
+    responseSchema: { type: 'OBJECT', properties, required },
+    zodSchema,
+  })
+
+  return { ...raw, points: Math.max(0, Math.min(maxPoints, Math.round(raw.points))) }
+}

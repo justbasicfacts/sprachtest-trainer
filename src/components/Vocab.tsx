@@ -273,12 +273,16 @@ function Stats() {
         <Heading size="lg" color="$primary600" mb="$2.5">Prüfungsergebnisse</Heading>
         {results.length === 0 ? <Muted>Noch keine Prüfungssimulation abgeschlossen.</Muted> :
           <VStack>
-            {results.map((r) => (
-              <HStack key={r.id} justifyContent="space-between" borderTopWidth="$1" borderTopColor="$borderLight200" py="$2">
-                <Text size="sm">{r.date} · {r.test}</Text>
-                <Text fontWeight="$bold" color={r.total >= 7.5 ? '$success600' : '$error600'}>{r.total} / 15 P</Text>
-              </HStack>
-            ))}
+            {results.map((r) => {
+              const max = r.max ?? 15
+              const pass = r.total >= (max === 30 ? 18 : 7.5)
+              return (
+                <HStack key={r.id} justifyContent="space-between" borderTopWidth="$1" borderTopColor="$borderLight200" py="$2">
+                  <Text size="sm">{r.date} · {r.test}{max === 30 ? ' · mit Sprechen' : ''}</Text>
+                  <Text fontWeight="$bold" color={pass ? '$success600' : '$error600'}>{r.total} / {max} P</Text>
+                </HStack>
+              )
+            })}
           </VStack>
         }
       </AppCard>

@@ -108,6 +108,7 @@ export async function generateTask(input: {
     const result = await geminiJson({
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
+      timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-1-Aufgabe: eine kurze Situation, in der jemand etwas sucht, und genau 3 ' +
@@ -122,6 +123,7 @@ export async function generateTask(input: {
     const result = await geminiJson({
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
+      timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-2-Aufgabe: einen kurzen Zeitungsartikel (3-4 Absätze) mit Titel, und genau 4 ' +
@@ -136,6 +138,7 @@ export async function generateTask(input: {
     const result = await geminiJson({
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
+      timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-3-Aufgabe: einen kurzen Sachtext (2-3 Absätze) und genau 3 mögliche ' +
@@ -149,6 +152,7 @@ export async function generateTask(input: {
   const result = await geminiJson({
     model: MODEL,
     fallbackModel: FALLBACK_MODEL,
+    timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
     system: SYSTEM_PROMPT,
     user:
       'Erstelle eine Teil-4-Aufgabe: eine Alltagssituation, in der eine kurze Nachricht geschrieben werden ' +

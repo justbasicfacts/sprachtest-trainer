@@ -36,6 +36,7 @@ export async function translateWord(input: { data: { word: string; context?: str
 
   return geminiJson({
     model: 'gemini-3.1-flash-lite', // günstigstes Modell, für Übersetzung/einfache Aufgaben optimiert
+    timeoutMs: 15_000, // kleine Übersetzung: schnell abbrechen und neu versuchen
     system:
       'Du bist ein präzises Deutsch-Englisch-Türkisch-Wörterbuch für Deutschlerner (Niveau B1). ' +
       'Antworte extrem knapp, ohne zusätzliche Erklärungen oder ganze Sätze.',

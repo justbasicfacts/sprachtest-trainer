@@ -28,10 +28,11 @@ class GeminiHttpError extends Error {
 }
 
 /* 503 = Modell überlastet, 429 = Rate-Limit (beim Free-Tier beides häufig und
-   transient), 500 = interner Fehler. Alles andere (400/403/404) ist ein echter
-   Fehler, bei dem Wiederholen nichts bringt. */
+   transient), 500 = interner Fehler, Timeout/Netzwerkfehler = Verbindung hängt.
+   Alles andere (400/403/404) ist ein echter Fehler, bei dem Wiederholen nichts bringt. */
 function isTransient(error: unknown): boolean {
   if (error instanceof GeminiHttpError) return error.status === 503 || error.status === 429 || error.status === 500
+  if (error instanceof DOMException) return error.name === 'TimeoutError' || error.name === 'AbortError'
   return error instanceof TypeError // Netzwerkfehler von fetch
 }
 
@@ -48,6 +49,9 @@ interface GeminiJsonOpts<T> {
   user: string
   responseSchema: GeminiSchema
   zodSchema: z.ZodType<T>
+  /** Abbruch pro Versuch in ms (Standard 30 s) - sonst kann eine hängende
+      Verbindung ewig im "pending"-Zustand bleiben und der Retry greift nie. */
+  timeoutMs?: number
 }
 
 /** Ein strukturierter JSON-Aufruf: System-Prompt + User-Prompt → per zod validiertes Objekt.
@@ -89,6 +93,7 @@ export async function geminiJson<T>(opts: GeminiJsonOpts<T>): Promise<T> {
 async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>): Promise<T> {
   const res = await fetch(`${API_BASE}/${model}:generateContent`, {
     method: 'POST',
+    signal: AbortSignal.timeout(opts.timeoutMs ?? 30_000),
     headers: {
       'Content-Type': 'application/json',
       'x-goog-api-key': key,

@@ -5,23 +5,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "typecheck": "tsc -b",
     "preview": "vite preview"
   },
   "dependencies": {
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.4.0",
-    "react": "^19.2.7"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "zod": "4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "esbuild": "^0.28.1",
+    "@vitejs/plugin-react": "5.2.0",
     "fake-indexeddb": "^6.2.5",
     "oxlint": "^1.71.0",
-    "react-dom": "^19.2.7",
-    "vite": "^8.1.1"
+    "typescript": "^5.9.3",
+    "vite": "^8.1.4"
   }
 }

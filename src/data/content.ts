@@ -1,5 +1,8 @@
 /* Prüfungsinhalte: Berliner Sprachtest für die Einbürgerung (Modelltest + Übungssätze) */
-export const DATA = {
+import { EXTRA } from './extra'
+import type { ExamData } from './types'
+
+export const DATA: ExamData = {
 
 /* ---------- TEIL 1: Anzeigen ---------- */
 teil1: [
@@ -229,5 +232,10 @@ redemittel:{
   meinung:["Ich bin der Meinung, dass …","Meiner Meinung nach …","Ich finde es gut / nicht so gut, dass …","Ein großer Vorteil ist, dass …","Ein Nachteil ist natürlich, dass …","Einerseits …, andererseits …","Da bin ich anderer Meinung, weil …","Da haben Sie recht, aber …","Für mich ist am wichtigsten, dass …","Deshalb würde ich … / An Ihrer Stelle würde ich …"],
   brief:["Sehr geehrte Damen und Herren, / Sehr geehrte Frau …, / Liebe Frau …,","ich schreibe Ihnen, weil …","ich habe Ihre Anzeige gelesen und …","Ich interessiere mich für …","Ich möchte gern wissen, ob / wann / wie viel …","Könnten Sie mir bitte sagen, …?","Über eine schnelle Antwort würde ich mich freuen.","Vielen Dank im Voraus!","Mit freundlichen Grüßen / Viele Grüße"]
 }
-};
+}
+/* Zusätzliche Übungssätze anhängen */
+for (const k of Object.keys(EXTRA) as (keyof typeof EXTRA)[]) {
+  ;(DATA[k] as unknown[]).push(...(EXTRA[k] as unknown[]))
+}
+
 export default DATA

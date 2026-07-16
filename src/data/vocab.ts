@@ -1,8 +1,16 @@
 /* ~150 prüfungsrelevante B1-Wörter (Berliner Sprachtest / Einbürgerung)
    de = deutsches Wort (Nomen mit Artikel + Plural), en/tr = Übersetzung, ex = Beispielsatz */
-export const VOCAB_TAGS = ['Behörden', 'Arbeit', 'Wohnen', 'Gesundheit', 'Bildung', 'Verkehr', 'Gesellschaft', 'Alltag', 'Verben', 'Adjektive', 'Eigene']
+export interface VocabSeedEntry {
+  de: string
+  en: string
+  tr: string
+  ex: string
+  tag: string
+}
 
-export const VOCAB_SEED = [
+export const VOCAB_TAGS: string[] = ['Behörden', 'Arbeit', 'Wohnen', 'Gesundheit', 'Bildung', 'Verkehr', 'Gesellschaft', 'Alltag', 'Verben', 'Adjektive', 'Eigene']
+
+export const VOCAB_SEED: VocabSeedEntry[] = [
 // ---------- Behörden & Einbürgerung ----------
 { de: 'die Einbürgerung, -en', en: 'naturalization', tr: 'vatandaşlığa geçiş', ex: 'Ich habe einen Antrag auf Einbürgerung gestellt.', tag: 'Behörden' },
 { de: 'die Staatsbürgerschaft, -en', en: 'citizenship', tr: 'vatandaşlık', ex: 'Ich möchte die deutsche Staatsbürgerschaft bekommen.', tag: 'Behörden' },

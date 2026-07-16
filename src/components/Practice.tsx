@@ -7,7 +7,7 @@ import { db, saveGeneratedTask, type GeneratedTaskRecord } from '../db'
 import { generateTask } from '../ai/generateTask'
 import { AiWritingScore } from './AiScore'
 import {
-  Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle, BackLink, Btn, FootActions,
+  Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle, BackLink, Btn, FootActions, Reveal,
 } from './ui/kit'
 
 type PartNum = 1 | 2 | 3 | 4
@@ -115,7 +115,6 @@ function PracticeTask({ part, d }: { part: PartNum; d: PracticeTaskData }) {
   const [text, setText] = useState('')
   const [showCheck, setShowCheck] = useState(false)
   const [selfScore, setSelfScore] = useState<number | null>(null)
-  const [showModel, setShowModel] = useState(false)
 
   if (part === 1) return <Teil1 d={d as Teil1Task} ans={a1} onPick={setA1} mode="practice" />
   if (part === 2) return <Teil2 d={d as Teil2Task} ans={a2} onPick={(i, v) => setA2((a) => a.map((x, j) => (j === i ? v : x)))} mode="practice" />
@@ -145,14 +144,11 @@ function PracticeTask({ part, d }: { part: PartNum; d: PracticeTaskData }) {
         </Text>
       )}
       <Box mt="$3">
-        <Text color="$primary600" fontWeight="$semibold" size="sm" onPress={() => setShowModel((v) => !v)}>
-          {showModel ? '▾ ' : '▸ '}💡 Musterlösung anzeigen
-        </Text>
-        {showModel && (
+        <Reveal label="💡 Musterlösung anzeigen">
           <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
             <Text sx={{ whiteSpace: 'pre-line' }}>{t4.model}</Text>
           </Box>
-        )}
+        </Reveal>
       </Box>
     </Teil4Prompt>
   )

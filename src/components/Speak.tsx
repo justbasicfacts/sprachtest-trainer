@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { motion } from 'motion/react'
 import { DATA } from '../data/content'
 import { TranslateZone } from './useWordTranslate'
 import { SpeakPractice } from './SpeakPractice'
 import {
   Box, HStack, VStack, Text, Heading, Pressable,
   AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, Btn, FootActions, Chip,
+  Reveal, ProgressBar,
 } from './ui/kit'
 
 const FOTO_BASE = import.meta.env.BASE_URL + 'fotos/'
@@ -165,19 +167,13 @@ function RedemittelBlock({ title, items }: { title: string; items: string[] }) {
 }
 
 function ModelAnswer({ label, text }: { label: string; text: string }) {
-  const [show, setShow] = useState(false)
   return (
     <Box mt="$3">
-      <Pressable onPress={() => setShow((v) => !v)}>
-        <Text color="$primary600" fontWeight="$semibold" size="sm">
-          {show ? '▾ ' : '▸ '}{label}
-        </Text>
-      </Pressable>
-      {show && (
+      <Reveal label={label}>
         <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
           <Text sx={{ whiteSpace: 'pre-line' }}>{text}</Text>
         </Box>
-      )}
+      </Reveal>
     </Box>
   )
 }
@@ -212,9 +208,15 @@ function Flashcards() {
   return (
     <>
       <Muted>Teil 5 · Kennenlernen · Frage {idx + 1} / {DATA.teil5.length}</Muted>
-      <Box h={8} bg="$borderLight200" borderRadius="$sm" mt="$2" mb="$4.5" sx={{ overflow: 'hidden' }}>
-        <Box h={8} bg="$yellow400" sx={{ width: `${((idx + 1) / DATA.teil5.length) * 100}%` }} />
+      <Box mt="$2" mb="$4.5">
+        <ProgressBar value={((idx + 1) / DATA.teil5.length) * 100} />
       </Box>
+      <motion.div
+        key={idx}
+        initial={{ opacity: 0, x: 32 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      >
       <TranslateZone>
         <AppCard>
           <Text size="lg" fontWeight="$semibold" mb="$4" sx={{ textAlign: 'center' }}>
@@ -240,6 +242,7 @@ function Flashcards() {
           </FootActions>
         </AppCard>
       </TranslateZone>
+      </motion.div>
       <Muted>Tipp: Antworte nie nur mit „Ja“ oder „Nein“ – gib immer ein Beispiel oder einen Grund (…, weil …). Du darfst auch selbst Fragen stellen!</Muted>
     </>
   )

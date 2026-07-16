@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { motion } from 'motion/react'
 import { db, seedVocab, type ExamResult } from './db'
 import Practice from './components/Practice'
 import Exam from './components/Exam'
@@ -7,7 +8,7 @@ import Speak from './components/Speak'
 import Vocab from './components/Vocab'
 import {
   Box, HStack, VStack, Text, Heading, Pressable, useBreakpointValue,
-  Page, AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle,
+  Page, AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, ConfirmDialog,
 } from './components/ui/kit'
 
 type TabId = 'home' | 'practice' | 'exam' | 'speak' | 'vocab'
@@ -23,6 +24,8 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 export default function App() {
   const [view, setView] = useState<TabId>('home')
   const [examActive, setExamActive] = useState(false)
+  // Ziel-Tab, der noch bestätigt werden muss, weil gerade eine Prüfung läuft
+  const [pendingView, setPendingView] = useState<TabId | null>(null)
   // Auf dem Handy wandert die Navigation nach unten (Daumen-Reichweite, App-Gefühl);
   // ab Tablet-Breite bleibt sie als klassische Tableiste oben.
   const bottomNav = useBreakpointValue({ base: true, md: false })
@@ -31,11 +34,18 @@ export default function App() {
     seedVocab()
   }, [])
 
-  const nav = (v: TabId) => {
-    if (examActive && !confirm('Prüfung abbrechen? Der Fortschritt geht verloren.')) return
+  const go = (v: TabId) => {
     setExamActive(false)
     setView(v)
     window.scrollTo(0, 0)
+  }
+
+  const nav = (v: TabId) => {
+    if (examActive) {
+      setPendingView(v)
+      return
+    }
+    go(v)
   }
 
   return (
@@ -58,15 +68,37 @@ export default function App() {
 
       <Box pb={bottomNav ? '$20' : '$0'}>
         <Page>
-          {view === 'home' && <Home go={nav} />}
-          {view === 'practice' && <Practice />}
-          {view === 'exam' && <Exam setExamActive={setExamActive} />}
-          {view === 'speak' && <Speak />}
-          {view === 'vocab' && <Vocab />}
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            {view === 'home' && <Home go={nav} />}
+            {view === 'practice' && <Practice />}
+            {view === 'exam' && <Exam setExamActive={setExamActive} />}
+            {view === 'speak' && <Speak />}
+            {view === 'vocab' && <Vocab />}
+          </motion.div>
         </Page>
       </Box>
 
       {bottomNav && <BottomNav view={view} onNav={nav} />}
+
+      <ConfirmDialog
+        open={pendingView !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingView(null)
+        }}
+        title="Prüfung abbrechen?"
+        description="Der Fortschritt dieser Prüfungssimulation geht verloren."
+        cancelLabel="Zurück zur Prüfung"
+        confirmLabel="Prüfung abbrechen"
+        onConfirm={() => {
+          if (pendingView) go(pendingView)
+          setPendingView(null)
+        }}
+      />
     </Box>
   )
 }
@@ -78,18 +110,19 @@ function TopNav({ view, onNav }: { view: TabId; onNav: (v: TabId) => void }) {
         {TABS.map((t) => {
           const active = view === t.id
           return (
-            <Pressable key={t.id} onPress={() => onNav(t.id)} flex={1} sx={{ minWidth: 90 }}>
-              <VStack
-                alignItems="center"
-                py="$3"
-                px="$2"
-                borderBottomWidth="$3"
-                borderBottomColor={active ? '$yellow400' : 'transparent'}
-              >
+            <Pressable key={t.id} onPress={() => onNav(t.id)} flex={1} sx={{ minWidth: 90, position: 'relative' }}>
+              <VStack alignItems="center" py="$3" px="$2">
                 <Text size="sm" fontWeight="$semibold" color={active ? '$primary600' : '$textLight500'}>
                   {t.label}
                 </Text>
               </VStack>
+              {active && (
+                <motion.div
+                  layoutId="topnav-underline"
+                  className="kit-nav-underline"
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                />
+              )}
             </Pressable>
           )
         })}
@@ -115,7 +148,12 @@ function BottomNav({ view, onNav }: { view: TabId; onNav: (v: TabId) => void }) 
         return (
           <Pressable key={t.id} onPress={() => onNav(t.id)} flex={1}>
             <VStack alignItems="center" py="$1.5">
-              <Text fontSize={20}>{t.icon}</Text>
+              <motion.div
+                animate={{ scale: active ? 1.18 : 1, y: active ? -1 : 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+              >
+                <Text fontSize={20}>{t.icon}</Text>
+              </motion.div>
               <Text size="2xs" fontWeight="$semibold" color={active ? '$primary600' : '$textLight500'} mt="$0.5">
                 {t.label}
               </Text>

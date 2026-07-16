@@ -6,8 +6,8 @@ import { TranslateZone } from './useWordTranslate'
 import { AiWritingScore } from './AiScore'
 import type { Teil4Task } from '../data/types'
 import {
-  Box, HStack, VStack, Text, Heading, Pressable,
-  AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, Btn, FootActions, ScoreBox,
+  Box, HStack, VStack, Text, Heading,
+  AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, Btn, FootActions, ScoreBox, Reveal,
 } from './ui/kit'
 
 type Phase = 'pick' | 'intro-lesen' | 'lesen' | 'intro-schreiben' | 'schreiben' | 'bewertung' | 'done'
@@ -257,7 +257,6 @@ function Bewertung({
   onFinish: (n: number) => void
 }) {
   const [checked, setChecked] = useState<boolean[]>(() => labels.map(() => false))
-  const [showModel, setShowModel] = useState(false)
   return (
     <TranslateZone>
       <AppCard>
@@ -265,16 +264,11 @@ function Bewertung({
         <Box bg="$backgroundLight50" borderWidth="$1" borderColor="$borderLight200" borderLeftWidth="$4" borderLeftColor="$primary600" borderRadius="$md" p="$4" mb="$2">
           <Text sx={{ whiteSpace: 'pre-line' }}>{text.trim() ? text : '(kein Text geschrieben)'}</Text>
         </Box>
-        <Pressable onPress={() => setShowModel((v) => !v)}>
-          <Text color="$primary600" fontWeight="$semibold" size="sm">
-            {showModel ? '▾ ' : '▸ '}💡 Musterlösung zum Vergleich
-          </Text>
-        </Pressable>
-        {showModel && (
+        <Reveal label="💡 Musterlösung zum Vergleich">
           <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
             <Text sx={{ whiteSpace: 'pre-line' }}>{model}</Text>
           </Box>
-        )}
+        </Reveal>
         <AiWritingScore d={task} text={text} />
         <Heading size="sm" mt="$3.5" mb="$1">Vergib deine Punkte (max. 6):</Heading>
         <VStack>

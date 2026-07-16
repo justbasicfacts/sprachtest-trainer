@@ -11,8 +11,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/fira-sans": "^5.2.7",
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.4.0",
+    "motion": "^12.42.2",
+    "radix-ui": "^1.6.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "4.4.3"

@@ -13,6 +13,7 @@
    Responsive Verhalten läuft über die .kit-*-Klassen in index.css (Media Queries)
    bzw. den useBreakpointValue-Hook (matchMedia, SSR-sicher mit base-Wert). */
 import {
+  useState,
   useSyncExternalStore,
   type CSSProperties,
   type ReactNode,
@@ -20,6 +21,8 @@ import {
   type MouseEventHandler,
   type TouchEventHandler,
 } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Collapsible, Progress, AlertDialog } from 'radix-ui'
 
 /* ---------------------------------- Tokens ---------------------------------- */
 
@@ -339,9 +342,18 @@ export function Page({ children }: { children: ReactNode }) {
   return <div className="kit-box kit-page">{children}</div>
 }
 
-/** Karte mit Rahmen (responsive Padding via .kit-card). */
+/** Karte mit Rahmen (responsive Padding via .kit-card), gleitet beim Erscheinen ein. */
 export function AppCard({ children }: { children: ReactNode }) {
-  return <div className="kit-box kit-card">{children}</div>
+  return (
+    <motion.div
+      className="kit-box kit-card"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
+  )
 }
 
 export function CardTitle({ children }: { children: ReactNode }) {
@@ -375,18 +387,36 @@ export function Tag({ children }: { children: ReactNode }) {
     Handy, Mehrspalten-Grid ab Tablet-Breite (via .kit-tile). */
 export function Tile({ onPress, disabled, children }: { onPress?: () => void; disabled?: boolean; children: ReactNode }) {
   return (
-    <Pressable className="kit-tile" onPress={onPress} disabled={disabled} opacity={disabled ? 0.6 : 1}>
-      <Box bg="$backgroundLight0" borderWidth="$1" borderColor="$borderLight200" borderRadius="$xl" p="$4" mb="$3" h="auto">
+    <motion.div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled || undefined}
+      className="kit-pressable kit-tile"
+      style={{ opacity: disabled ? 0.6 : 1 }}
+      onClick={disabled ? undefined : onPress}
+      onKeyDown={(e) => {
+        if (disabled || !onPress) return
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onPress()
+        }
+      }}
+      whileHover={disabled ? undefined : { y: -3 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    >
+      <Box bg="$backgroundLight0" borderWidth="$1" borderColor="$borderLight200" borderRadius="$xl" p="$4" flex={1}>
         {children}
       </Box>
-    </Pressable>
+    </motion.div>
   )
 }
 
-/** Container für ein Raster aus <Tile>s. */
+/** Container für ein Raster aus <Tile>s. Der gap regelt die Abstände zwischen den
+    Kacheln; mb sorgt für Luft zu dem, was nach dem Raster kommt. */
 export function TileGrid({ children }: { children: ReactNode }) {
   return (
-    <HStack flexWrap="wrap" gap="$3" alignItems="stretch">
+    <HStack flexWrap="wrap" gap="$3" alignItems="stretch" mb="$4">
       {children}
     </HStack>
   )
@@ -425,7 +455,7 @@ export function Btn({
   fullWidthOnMobile?: boolean
 }) {
   return (
-    <button
+    <motion.button
       type="button"
       className={`kit-btn${fullWidthOnMobile ? ' kit-btn-fullmobile' : ''}`}
       style={{
@@ -436,9 +466,11 @@ export function Btn({
       }}
       onClick={onPress}
       disabled={disabled}
+      whileTap={disabled ? undefined : { scale: 0.96 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
     >
       {children}
-    </button>
+    </motion.button>
   )
 }
 
@@ -494,8 +526,20 @@ export function ReadingBox({ title, children }: { title?: string; children: Reac
   )
 }
 
-/** Feedback nach einer Antwort (ok/falsch/nicht beantwortet). */
+/** Feedback nach einer Antwort (ok/falsch/nicht beantwortet), federt beim Erscheinen ein. */
 export function Feedback({ ok, unanswered, text }: { ok: boolean; unanswered: boolean; text: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+    >
+      <FeedbackBox ok={ok} unanswered={unanswered} text={text} />
+    </motion.div>
+  )
+}
+
+function FeedbackBox({ ok, unanswered, text }: { ok: boolean; unanswered: boolean; text: string }) {
   return (
     <Box
       bg={unanswered ? '$backgroundLight50' : ok ? '$success50' : '$error50'}
@@ -570,4 +614,87 @@ export function Chip({ children }: { children: ReactNode }) {
 
 export function PillInfo({ children }: { children: ReactNode }) {
   return <Muted mt="$0">{children}</Muted>
+}
+
+/** Aufklappbarer Bereich (z. B. Musterlösungen): Radix Collapsible für die
+    Zugänglichkeit, Motion für die sanfte Höhen-Animation. */
+export function Reveal({ label, children }: { label: ReactNode; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Collapsible.Root open={open} onOpenChange={setOpen}>
+      <Collapsible.Trigger className="kit-reveal-trigger">
+        <motion.span
+          className="kit-reveal-arrow"
+          animate={{ rotate: open ? 90 : 0 }}
+          transition={{ duration: 0.18 }}
+        >
+          ▶
+        </motion.span>
+        {label}
+      </Collapsible.Trigger>
+      <AnimatePresence initial={false}>
+        {open && (
+          <Collapsible.Content asChild forceMount>
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{ overflow: 'hidden' }}
+            >
+              {children}
+            </motion.div>
+          </Collapsible.Content>
+        )}
+      </AnimatePresence>
+    </Collapsible.Root>
+  )
+}
+
+/** Fortschrittsbalken (0-100), animiert die Breite. */
+export function ProgressBar({ value }: { value: number }) {
+  const clamped = Math.max(0, Math.min(100, value))
+  return (
+    <Progress.Root className="kit-progress-root" value={clamped}>
+      <Progress.Indicator asChild>
+        <motion.div
+          className="kit-progress-bar"
+          initial={false}
+          animate={{ width: `${clamped}%` }}
+          transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+        />
+      </Progress.Indicator>
+    </Progress.Root>
+  )
+}
+
+/** Bestätigungs-Dialog (ersetzt window.confirm) auf Radix AlertDialog-Basis. */
+export function ConfirmDialog({
+  open, onOpenChange, title, description, cancelLabel, confirmLabel, onConfirm,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  description: string
+  cancelLabel: string
+  confirmLabel: string
+  onConfirm: () => void
+}) {
+  return (
+    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className="kit-dialog-overlay" />
+        <AlertDialog.Content className="kit-dialog-content">
+          <AlertDialog.Title className="kit-dialog-title">{title}</AlertDialog.Title>
+          <AlertDialog.Description className="kit-dialog-desc">{description}</AlertDialog.Description>
+          <div className="kit-dialog-actions">
+            <AlertDialog.Cancel className="kit-btn kit-btn--secondary">{cancelLabel}</AlertDialog.Cancel>
+            <AlertDialog.Action className="kit-btn kit-btn--danger" onClick={onConfirm}>
+              {confirmLabel}
+            </AlertDialog.Action>
+          </div>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  )
 }

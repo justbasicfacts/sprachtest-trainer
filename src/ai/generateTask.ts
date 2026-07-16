@@ -24,6 +24,9 @@ realistische Details (Namen, Orte, Zahlen). Antworte ausschließlich auf Deutsch
 JSON-Schema.`
 
 const MODEL = 'gemini-3.5-flash'
+// Wenn das Hauptmodell überlastet ist (503), auf das leichtere Modell ausweichen -
+// etwas einfachere Aufgaben sind besser als gar keine.
+const FALLBACK_MODEL = 'gemini-3.1-flash-lite'
 
 /* Gemini-REST-Schemas, spiegelbildlich zu den zod-Schemas in data/schemas.ts
    (die zod-Schemas validieren die Antwort anschließend). */
@@ -104,6 +107,7 @@ export async function generateTask(input: {
   if (data.part === 1) {
     const result = await geminiJson({
       model: MODEL,
+      fallbackModel: FALLBACK_MODEL,
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-1-Aufgabe: eine kurze Situation, in der jemand etwas sucht, und genau 3 ' +
@@ -117,6 +121,7 @@ export async function generateTask(input: {
   if (data.part === 2) {
     const result = await geminiJson({
       model: MODEL,
+      fallbackModel: FALLBACK_MODEL,
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-2-Aufgabe: einen kurzen Zeitungsartikel (3-4 Absätze) mit Titel, und genau 4 ' +
@@ -130,6 +135,7 @@ export async function generateTask(input: {
   if (data.part === 3) {
     const result = await geminiJson({
       model: MODEL,
+      fallbackModel: FALLBACK_MODEL,
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-3-Aufgabe: einen kurzen Sachtext (2-3 Absätze) und genau 3 mögliche ' +
@@ -142,6 +148,7 @@ export async function generateTask(input: {
 
   const result = await geminiJson({
     model: MODEL,
+    fallbackModel: FALLBACK_MODEL,
     system: SYSTEM_PROMPT,
     user:
       'Erstelle eine Teil-4-Aufgabe: eine Alltagssituation, in der eine kurze Nachricht geschrieben werden ' +

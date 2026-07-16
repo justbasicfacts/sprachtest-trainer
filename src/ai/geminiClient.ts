@@ -20,77 +20,109 @@ export function readGeminiApiKey(): string {
   return key
 }
 
-/* Kleiner Retry-Wrapper: Gemini liefert gelegentlich (Netzwerk-Hänger, Rate-Limit,
-   oder das Modell "verdenkt" sein Antwortbudget) kein brauchbares Ergebnis. Ein
-   einmaliger Retry behebt die meisten transienten Fälle. */
-async function withRetry<T>(run: () => Promise<T>): Promise<T> {
-  try {
-    return await run()
-  } catch (error) {
-    console.warn('[geminiClient] erster Versuch fehlgeschlagen, wiederhole einmal:', error)
-    try {
-      return await run()
-    } catch (retryError) {
-      const first = error instanceof Error ? error.message : String(error)
-      const second = retryError instanceof Error ? retryError.message : String(retryError)
-      throw new Error(
-        `KI-Antwort fehlgeschlagen (auch nach Wiederholung). Erster Versuch: "${first}". Zweiter Versuch: "${second}".`
-      )
-    }
+/** Fehler mit HTTP-Status, damit die Retry-Logik transiente Fälle erkennen kann. */
+class GeminiHttpError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
   }
 }
+
+/* 503 = Modell überlastet, 429 = Rate-Limit (beim Free-Tier beides häufig und
+   transient), 500 = interner Fehler. Alles andere (400/403/404) ist ein echter
+   Fehler, bei dem Wiederholen nichts bringt. */
+function isTransient(error: unknown): boolean {
+  if (error instanceof GeminiHttpError) return error.status === 503 || error.status === 429 || error.status === 500
+  return error instanceof TypeError // Netzwerkfehler von fetch
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /** Gemini-Schema im REST-Format (Teilmenge von OpenAPI, Typen in GROSSBUCHSTABEN). */
 export type GeminiSchema = Record<string, unknown>
 
-/** Ein strukturierter JSON-Aufruf: System-Prompt + User-Prompt → per zod validiertes Objekt. */
-export async function geminiJson<T>(opts: {
+interface GeminiJsonOpts<T> {
   model: string
+  /** Ausweichmodell, wenn das Hauptmodell überlastet bleibt (503/429). */
+  fallbackModel?: string
   system: string
   user: string
   responseSchema: GeminiSchema
   zodSchema: z.ZodType<T>
-}): Promise<T> {
+}
+
+/** Ein strukturierter JSON-Aufruf: System-Prompt + User-Prompt → per zod validiertes Objekt.
+    Bei Überlastung (503/429): bis zu 3 Versuche mit Backoff, danach 1 Versuch mit dem
+    Ausweichmodell. */
+export async function geminiJson<T>(opts: GeminiJsonOpts<T>): Promise<T> {
   const key = readGeminiApiKey()
+  const delays = [0, 1500, 4000] // ms vor Versuch 1, 2, 3
+  let lastError: unknown
 
-  return withRetry(async () => {
-    const res = await fetch(`${API_BASE}/${opts.model}:generateContent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': key,
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (delays[attempt] > 0) await sleep(delays[attempt])
+    try {
+      return await callOnce(opts.model, key, opts)
+    } catch (error) {
+      lastError = error
+      if (!isTransient(error)) break // 400er usw.: sofort aufgeben
+      console.warn(`[geminiClient] ${opts.model} Versuch ${attempt + 1} fehlgeschlagen:`, error)
+    }
+  }
+
+  if (opts.fallbackModel && isTransient(lastError)) {
+    console.warn(`[geminiClient] weiche auf ${opts.fallbackModel} aus`)
+    try {
+      return await callOnce(opts.fallbackModel, key, opts)
+    } catch (fallbackError) {
+      lastError = fallbackError
+    }
+  }
+
+  const msg = lastError instanceof Error ? lastError.message : String(lastError)
+  throw new Error(
+    isTransient(lastError)
+      ? `Die KI ist gerade überlastet (${msg}). Bitte in ein paar Sekunden noch einmal versuchen.`
+      : msg
+  )
+}
+
+async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>): Promise<T> {
+  const res = await fetch(`${API_BASE}/${model}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': key,
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: opts.system }] },
+      contents: [{ role: 'user', parts: [{ text: opts.user }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: opts.responseSchema,
+        // Ohne das spendet Gemini 3.x manchmal das gesamte Antwortbudget fürs
+        // "Denken" und liefert nie den finalen JSON-Teil. Minimales Thinking
+        // reicht für diese Aufgaben völlig aus.
+        thinkingConfig: { thinkingLevel: 'LOW' },
       },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: opts.system }] },
-        contents: [{ role: 'user', parts: [{ text: opts.user }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: opts.responseSchema,
-          // Ohne das spendet Gemini 3.x manchmal das gesamte Antwortbudget fürs
-          // "Denken" und liefert nie den finalen JSON-Teil. Minimales Thinking
-          // reicht für diese Aufgaben völlig aus.
-          thinkingConfig: { thinkingLevel: 'LOW' },
-        },
-      }),
-    })
-
-    if (!res.ok) {
-      let message = `HTTP ${res.status}`
-      try {
-        const err = (await res.json()) as { error?: { message?: string } }
-        if (err.error?.message) message = err.error.message
-      } catch {
-        /* Fehlertext nicht parsebar - Statuscode reicht */
-      }
-      throw new Error(`Gemini-Anfrage fehlgeschlagen: ${message}`)
-    }
-
-    const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[]
-    }
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('')
-    if (!text) throw new Error('Gemini hat keine Antwort geliefert.')
-
-    return opts.zodSchema.parse(JSON.parse(text))
+    }),
   })
+
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`
+    try {
+      const err = (await res.json()) as { error?: { message?: string } }
+      if (err.error?.message) message = err.error.message
+    } catch {
+      /* Fehlertext nicht parsebar - Statuscode reicht */
+    }
+    throw new GeminiHttpError(`Gemini-Anfrage fehlgeschlagen: ${message}`, res.status)
+  }
+
+  const data = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[]
+  }
+  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('')
+  if (!text) throw new Error('Gemini hat keine Antwort geliefert.')
+
+  return opts.zodSchema.parse(JSON.parse(text))
 }

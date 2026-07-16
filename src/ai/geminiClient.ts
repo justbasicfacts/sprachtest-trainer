@@ -47,6 +47,8 @@ interface GeminiJsonOpts<T> {
   fallbackModel?: string
   system: string
   user: string
+  /** Optionale Audiodaten (z. B. eine Sprachaufnahme), die Gemini mit analysieren soll. */
+  audio?: { mimeType: string; base64: string }
   responseSchema: GeminiSchema
   zodSchema: z.ZodType<T>
   /** Abbruch pro Versuch in ms (Standard 30 s) - sonst kann eine hängende
@@ -100,7 +102,15 @@ async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>):
     },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: opts.system }] },
-      contents: [{ role: 'user', parts: [{ text: opts.user }] }],
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: opts.user },
+            ...(opts.audio ? [{ inline_data: { mime_type: opts.audio.mimeType, data: opts.audio.base64 } }] : []),
+          ],
+        },
+      ],
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: opts.responseSchema,

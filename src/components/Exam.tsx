@@ -3,6 +3,8 @@ import { DATA } from '../data/content'
 import { db } from '../db'
 import { Teil1, Teil2, Teil3, Teil4Prompt, WordCount, scoreLesen, CheckRow } from './Tasks'
 import { TranslateZone } from './useWordTranslate'
+import { AiWritingScore } from './AiScore'
+import type { Teil4Task } from '../data/types'
 import {
   Box, HStack, VStack, Text, Heading, Pressable,
   AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, Btn, FootActions, ScoreBox,
@@ -172,6 +174,7 @@ export default function Exam({ setExamActive }: { setExamActive: (active: boolea
     return (
       <Bewertung
         text={text}
+        task={t.t4}
         model={t.t4.model}
         labels={labels}
         onFinish={async (n) => {
@@ -245,9 +248,10 @@ function WriteArea({ value, onChange }: { value: string; onChange: (v: string) =
 }
 
 function Bewertung({
-  text, model, labels, onFinish,
+  text, task, model, labels, onFinish,
 }: {
   text: string
+  task: Teil4Task
   model: string
   labels: string[]
   onFinish: (n: number) => void
@@ -271,6 +275,7 @@ function Bewertung({
             <Text sx={{ whiteSpace: 'pre-line' }}>{model}</Text>
           </Box>
         )}
+        <AiWritingScore d={task} text={text} />
         <Heading size="sm" mt="$3.5" mb="$1">Vergib deine Punkte (max. 6):</Heading>
         <VStack>
           {labels.map((l, i) => (

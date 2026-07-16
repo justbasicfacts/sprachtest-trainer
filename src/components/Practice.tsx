@@ -5,6 +5,7 @@ import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task } from '../data/types'
 import { Teil1, Teil2, Teil3, Teil4Prompt, WordCount, SelfAssess } from './Tasks'
 import { db, saveGeneratedTask, type GeneratedTaskRecord } from '../db'
 import { generateTask } from '../ai/generateTask'
+import { AiWritingScore } from './AiScore'
 import {
   Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle, BackLink, Btn, FootActions,
 } from './ui/kit'
@@ -136,6 +137,7 @@ function PracticeTask({ part, d }: { part: PartNum; d: PracticeTaskData }) {
       <FootActions>
         <Btn onPress={() => setShowCheck(true)}>Selbst prüfen</Btn>
       </FootActions>
+      <AiWritingScore d={t4} text={text} />
       {showCheck && <SelfAssess d={t4} onDone={setSelfScore} />}
       {selfScore !== null && (
         <Text fontWeight="$bold" mt="$2.5">

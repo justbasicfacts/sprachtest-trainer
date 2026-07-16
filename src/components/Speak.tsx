@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { DATA } from '../data/content'
 import { TranslateZone } from './useWordTranslate'
+import { SpeakPractice } from './SpeakPractice'
 import {
   Box, HStack, VStack, Text, Heading, Pressable,
   AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, Btn, FootActions, Chip,
@@ -72,6 +73,16 @@ export default function Speak() {
               <HStack flexWrap="wrap" mt="$1.5">
                 {f.hints.map((h) => <Chip key={h}>{h}</Chip>)}
               </HStack>
+              <SpeakPractice
+                key={f.title}
+                context={`Teil 6 (Über ein Foto sprechen). Foto: „${f.title}“. Stichworte zum Foto: ${f.hints.join(', ')}. Der Lernende soll das Foto 2-3 Minuten beschreiben.`}
+                criteria={[
+                  'Beschrieben, was auf dem Foto zu sehen ist (Personen, Ort, Gegenstände)',
+                  'Beschrieben, was gerade passiert',
+                  'Eine Vermutung geäußert („Ich denke, dass …“, „Wahrscheinlich …“)',
+                  'Eigene Erfahrung oder Meinung dazu gesagt',
+                ]}
+              />
               <ModelAnswer label="💡 Musterbeschreibung anzeigen" text={f.model} />
             </AppCard>
           </TranslateZone>
@@ -104,6 +115,15 @@ export default function Speak() {
                 <Text fontWeight="$medium">{s.situation}</Text>
               </Box>
               <Muted>Überlege zuerst selbst 2 Vorteile und 2 Nachteile – dann vergleiche:</Muted>
+              <SpeakPractice
+                key={s.set}
+                context={`Teil 7 (Eine Situation besprechen). Situation: „${s.situation}“. Der Lernende soll Vorteile und Nachteile besprechen und Stellung nehmen.`}
+                criteria={[
+                  'Mindestens einen Vorteil genannt',
+                  'Mindestens einen Nachteil genannt',
+                  'Eigene Meinung mit Begründung gesagt (z. B. mit „weil“ oder „deshalb“)',
+                ]}
+              />
               <ProContra pro={s.pro} contra={s.contra} />
             </AppCard>
           </TranslateZone>
@@ -201,6 +221,14 @@ function Flashcards() {
             „{f.q}“
           </Text>
           <Muted>Antworte zuerst laut in 2–3 Sätzen …</Muted>
+          <SpeakPractice
+            key={f.q}
+            context={`Teil 5 (Kennenlernen). Frage des Prüfers: „${f.q}“. Der Lernende soll in 2-3 Sätzen antworten.`}
+            criteria={[
+              'Die Frage wirklich beantwortet (2-3 Sätze, nicht nur „ja“/„nein“)',
+              'Einen Grund oder ein Beispiel genannt (z. B. mit „weil“)',
+            ]}
+          />
           {show && (
             <Box bg="$backgroundLight50" borderWidth="$1" borderColor="$borderLight200" borderRadius="$md" p="$3.5" mt="$3.5">
               <Text sx={{ whiteSpace: 'pre-line' }}>{f.a}</Text>

@@ -48,6 +48,17 @@ teil1: [
   correct:2,
   expl:"Die Wohnung (a) ist unbefristet und erst ab Dezember frei. Die Ferienwohnung (b) ist für Urlaub und pro Nacht sehr teuer. Das möblierte Zimmer auf Zeit (c) passt genau: sofort frei, für 1–4 Monate."
 },
+{
+  id:"t1s9", set:"Übungssatz 9 (aus Prüfungsberichten)",
+  situation:"Sie möchten eine Ausbildung als Koch bzw. Köchin machen und suchen einen Ausbildungsplatz in einem Restaurant oder Hotel in Berlin.",
+  ads:[
+    {head:"KOCHKURS FÜR HOBBYKÖCHE", body:"Lernen Sie an drei Abenden, wie man italienische Klassiker kocht – für alle, die gern privat besser kochen möchten. Keine Vorkenntnisse nötig.", foot:"Kochschule Genussvoll, Anmeldung online"},
+    {head:"HOTEL LINDENHOF SUCHT AUSBILDUNGSPLATZ KOCH/KÖCHIN", body:"Wir bilden ab September aus! Sie lernen bei uns alle Stationen der Küche kennen, begleitet von erfahrenen Köchinnen und Köchen. Schulabschluss erforderlich.", foot:"Bewerbung an bewerbung@hotel-lindenhof.de"},
+    {head:"ERFAHRENE KÖCHIN/ERFAHRENER KOCH GESUCHT", body:"Restaurant Zur Linde sucht sofort eine ausgebildete Fachkraft mit mindestens drei Jahren Berufserfahrung für die Vollzeitstelle in der Küche.", foot:"Tel. 030 456 78 90"},
+  ],
+  correct:1,
+  expl:"Gesucht wird ein Ausbildungsplatz. Der Kochkurs (a) ist nur ein Hobbykurs, keine Ausbildung. Restaurant Zur Linde (c) sucht bereits ausgebildetes Personal mit Erfahrung, keine Auszubildenden. Das Hotel Lindenhof (b) bietet genau den gesuchten Ausbildungsplatz an."
+},
 ],
 
 teil2: [
@@ -95,6 +106,17 @@ teil2: [
     {s:"Ein Erste-Hilfe-Kurs dauert eine Woche.", a:false, e:"Ein Kurs dauert nur einen Tag."},
   ]
 },
+{
+  id:"t2s9", set:"Übungssatz 9 (aus Prüfungsberichten)",
+  title:"Vom Berufsleben in Berlin auf den Bauernhof",
+  text:"Immer wieder ziehen Familien aus der Großstadt aufs Land. Auch drei Familien aus Berlin haben in den letzten Jahren ihr Leben verändert: Sie sind gemeinsam auf einen alten Bauernhof in Brandenburg gezogen und bewirtschaften ihn seitdem zusammen.\n„In Berlin haben wir in einer kleinen Wohnung gelebt und kaum einen Garten gesehen. Hier haben die Kinder viel Platz zum Spielen, und wir bauen unser eigenes Gemüse an“, erzählt Familie Brenner, die vor zwei Jahren umgezogen ist.\nDas Leben auf dem Land ist aber nicht nur einfach: Die nächste Schule ist 20 Minuten mit dem Auto entfernt, und ohne eigenes Fahrzeug kommt man kaum voran. Auch die Arbeit auf dem Hof ist anstrengend und lässt sich nicht einfach nach Feierabend beenden.\nTrotzdem bereuen die drei Familien ihre Entscheidung nicht. „Wir haben jetzt weniger Geld, aber mehr Zeit für das, was uns wichtig ist“, sagt Herr Brenner. Die Kinder gehen inzwischen gern in die kleine Dorfschule und haben schnell neue Freunde gefunden.",
+  items:[
+    {s:"Die drei Familien sind zusammen auf einen Bauernhof gezogen.", a:true, e:"„… sind gemeinsam auf einen alten Bauernhof in Brandenburg gezogen …“"},
+    {s:"In Berlin hatte Familie Brenner einen großen Garten.", a:false, e:"Sie hatten eine kleine Wohnung und kaum einen Garten."},
+    {s:"Die Schule ist zu Fuß in wenigen Minuten zu erreichen.", a:false, e:"Die nächste Schule ist 20 Autominuten entfernt."},
+    {s:"Herr Brenner sagt, dass sie jetzt mehr Zeit für Wichtiges haben.", a:true, e:"„Wir haben jetzt weniger Geld, aber mehr Zeit für das, was uns wichtig ist.“"},
+  ]
+},
 ],
 
 teil3: [
@@ -126,6 +148,13 @@ teil3: [
   correct:1,
   expl:"Der Text lobt das Leitungswasser (kontrolliert, günstig, gut für die Umwelt). Es ist keine Werbung für Mineralwasser (a), und ums Trinken bei Hitze (c) geht es nicht."
 },
+{
+  id:"t3s9", set:"Übungssatz 9 (aus Prüfungsberichten)",
+  text:"Für viele Menschen in Deutschland ist das Internet zu einem täglichen Begleiter geworden. Ob beim Einkaufen, beim Kontakt mit Freunden oder in der Freizeit: Kaum eine andere Erfindung hat den Alltag in den letzten Jahren so stark verändert.\nBesonders in der Freizeit spielt das Internet eine große Rolle. Viele schauen abends Serien im Streaming-Dienst, hören Musik oder Podcasts, spielen online mit Freunden oder informieren sich über Hobbys und Reiseziele. Auch der Kontakt zur Familie im Ausland ist über Video-Anrufe viel einfacher geworden als früher.\nNatürlich gibt es auch kritische Stimmen: Manche Fachleute warnen davor, zu viel Zeit vor dem Bildschirm zu verbringen, statt sich draußen zu bewegen oder sich persönlich zu treffen. Trotzdem sagen viele Menschen, dass sie im Alltag kaum noch auf das Internet verzichten könnten.",
+  options:["Warum das Internet in Deutschland zu langsam ist","Das Internet als ständiger Begleiter in der Freizeit","Immer mehr Menschen kündigen ihren Internetanschluss"],
+  correct:1,
+  expl:"Der Text beschreibt, wie sehr das Internet die Freizeit begleitet (Streaming, Kontakt, Hobbys). Von der Geschwindigkeit (a) ist nicht die Rede, und Kündigungen (c) werden nicht erwähnt."
+},
 ],
 
 teil4: [
@@ -153,6 +182,36 @@ teil4: [
   points:["Warum schreiben Sie?","Beschreiben Sie das Problem","Bitten Sie um eine schnelle Reparatur","Wann sind Sie zu Hause erreichbar?"],
   model:"Sehr geehrte Damen und Herren,\n\nich wohne in der Gartenstraße 12, 2. Stock links, und schreibe Ihnen wegen eines dringenden Problems.\n\nSeit drei Tagen funktioniert die Heizung in meiner Wohnung nicht mehr. Alle Heizkörper bleiben kalt, obwohl ich sie ganz aufgedreht habe. Da es draußen friert, ist die Wohnung inzwischen sehr kalt – das ist besonders für meine kleinen Kinder ein Problem.\n\nIch bitte Sie deshalb, so schnell wie möglich einen Handwerker zu schicken.\n\nSie erreichen mich am besten werktags ab 16 Uhr zu Hause oder jederzeit unter 0176 987 654 32.\n\nVielen Dank im Voraus.\n\nMit freundlichen Grüßen\nVorname Nachname"
 },
+{
+  id:"t4s9", set:"Übungssatz 9 (aus Prüfungsberichten)",
+  situation:"Sie arbeiten in einem Büro in Berlin. Ihr Arbeitskollege telefoniert immer sehr laut, und Sie hatten deshalb einen Streit mit ihm. Sie möchten, dass Ihre Chefin, Frau Kaiser, das Problem löst. Schreiben Sie eine E-Mail an Ihre Chefin.",
+  points:["Grund / Problem mit dem Kollegen","Was Sie bereits unternommen haben","eine Aktion von Ihrer Chefin fordern","Bitte um schnelle Rückmeldung"],
+  model:"Sehr geehrte Frau Kaiser,\n\nich schreibe Ihnen wegen eines Problems mit meinem Kollegen Herrn Weiß.\n\nHerr Weiß telefoniert fast jeden Tag sehr laut an seinem Schreibtisch, sodass ich mich kaum noch konzentrieren kann. Ich habe ihn schon mehrmals freundlich darauf angesprochen, aber leider hat sich nichts geändert. Deshalb hatten wir gestern auch einen Streit.\n\nKönnten Sie bitte mit Herrn Weiß sprechen oder eine andere Lösung finden, zum Beispiel einen ruhigen Telefonraum?\n\nIch würde mich über eine schnelle Rückmeldung von Ihnen freuen.\n\nMit freundlichen Grüßen\nVorname Nachname"
+},
+{
+  id:"t4s10", set:"Übungssatz 10 (Bewerbung)",
+  situation:"Sie haben eine Stellenanzeige für eine Ausbildung als Verkäuferin/Verkäufer in einem Supermarkt in Ihrer Nähe gesehen. Sie möchten sich bewerben. Schreiben Sie eine E-Mail an den Markt.",
+  points:["Warum schreiben Sie?","Warum interessieren Sie sich für diese Ausbildung?","Ihre Erfahrungen/Stärken","Bitte um ein Vorstellungsgespräch"],
+  model:"Sehr geehrte Damen und Herren,\n\nich habe Ihre Anzeige für einen Ausbildungsplatz als Verkäuferin gesehen und möchte mich hiermit bewerben.\n\nDer Beruf interessiert mich, weil ich gern mit Menschen zu tun habe und schon immer im Verkauf arbeiten wollte.\n\nIch bin freundlich, zuverlässig und habe bereits ein Praktikum in einem Geschäft gemacht. Außerdem lerne ich schnell und arbeite gern im Team.\n\nGern würde ich mich in einem persönlichen Gespräch vorstellen. Über eine Einladung würde ich mich sehr freuen.\n\nMit freundlichen Grüßen\nVorname Nachname"
+},
+{
+  id:"t4s11", set:"Übungssatz 11 (Wohnungssuche)",
+  situation:"Sie haben online eine Wohnungsanzeige gesehen, die Ihnen gefällt. Sie möchten die Wohnung gern besichtigen. Schreiben Sie eine Nachricht an den Vermieter.",
+  points:["Warum schreiben Sie?","Warum passt die Wohnung zu Ihnen?","Fragen zur Wohnung (z. B. Nebenkosten, Einzugsdatum)","Bitte um einen Besichtigungstermin"],
+  model:"Sehr geehrter Herr Fischer,\n\nich habe Ihre Anzeige für die Zweizimmerwohnung in der Rosenstraße gesehen und interessiere mich sehr dafür.\n\nDie Wohnung passt gut zu mir, weil ich in der Nähe arbeite und eine ruhige Wohnung in dieser Größe suche.\n\nKönnten Sie mir bitte sagen, wie hoch die Nebenkosten sind und ab wann die Wohnung frei ist?\n\nGern würde ich die Wohnung besichtigen. Hätten Sie in den nächsten Tagen Zeit für einen Termin?\n\nMit freundlichen Grüßen\nVorname Nachname"
+},
+{
+  id:"t4s12", set:"Übungssatz 12 (Kündigung)",
+  situation:"Sie sind seit einem Jahr Mitglied in einem Fitnessstudio. Weil Sie umziehen, möchten Sie Ihre Mitgliedschaft zum Ende des Vertragsjahres kündigen. Schreiben Sie eine Nachricht an das Fitnessstudio.",
+  points:["Warum schreiben Sie?","Grund für die Kündigung","Zu welchem Datum möchten Sie kündigen?","Bitte um eine Kündigungsbestätigung"],
+  model:"Sehr geehrte Damen und Herren,\n\nhiermit kündige ich meine Mitgliedschaft in Ihrem Fitnessstudio.\n\nIch ziehe Ende des Monats aus beruflichen Gründen in eine andere Stadt und kann Ihr Studio deshalb nicht mehr nutzen.\n\nBitte kündigen Sie meinen Vertrag zum nächstmöglichen Termin, spätestens zum Ende der Vertragslaufzeit.\n\nSchicken Sie mir bitte eine schriftliche Bestätigung der Kündigung.\n\nMit freundlichen Grüßen\nVorname Nachname"
+},
+{
+  id:"t4s13", set:"Übungssatz 13 (Einladung)",
+  situation:"Sie machen am Samstag ein kleines Grillfest im Garten/auf dem Balkon. Sie möchten einen guten Freund/eine gute Freundin einladen. Schreiben Sie eine Nachricht.",
+  points:["Warum schreiben Sie?","Wann und wo findet das Fest statt?","Was soll die Person mitbringen?","Bitte um Rückmeldung, ob sie kommt"],
+  model:"Liebe Sarah,\n\nam Samstag mache ich ein kleines Grillfest und möchte dich herzlich dazu einladen!\n\nWir treffen uns ab 17 Uhr bei mir im Garten, in der Ahornstraße 4.\n\nFür Getränke und Fleisch ist gesorgt – wenn du magst, bring einfach einen Salat oder einen Nachtisch mit.\n\nSag mir bitte kurz Bescheid, ob du kommen kannst. Ich würde mich sehr freuen!\n\nLiebe Grüße\nVorname"
+},
 ],
 
 teil5: [
@@ -164,6 +223,31 @@ teil5: [
 {q:"Welche Unterschiede gibt es zwischen Berlin und Ihrer Heimatstadt?", a:"Berlin ist viel größer und die öffentlichen Verkehrsmittel fahren die ganze Nacht. In meiner Heimatstadt ist das Leben langsamer, und die Familie wohnt näher zusammen. Beides hat Vorteile."},
 {q:"Welche deutschen Feste oder Traditionen kennen Sie?", a:"Ich kenne Weihnachten mit den Weihnachtsmärkten, Ostern und Silvester mit dem Feuerwerk. Mit meinen Kindern bastle ich außerdem jedes Jahr eine Schultüte und eine Laterne für den Sankt-Martins-Umzug."},
 {q:"Wie sieht ein normaler Tag bei Ihnen aus?", a:"Ich stehe um halb sieben auf und bringe zuerst die Kinder zur Schule. Danach arbeite ich bis 17 Uhr. Abends kochen wir zusammen, und danach lerne ich oft noch etwas Deutsch."},
+],
+
+/* Diese 3 Themen wurden in echten Prüfungsberichten genannt (Kinder beim Fußball,
+   volle U-Bahn, Ärger in einer Besprechung). Da uns keine echten Fotos dafür
+   vorliegen, sind es einfache Illustrationen statt echter Fotos - zum Beschreiben
+   trotzdem gut geeignet. */
+teil6: [
+{
+  img:"foto4.svg",
+  title:"Foto 4: Kinder beim Fußballspielen",
+  hints:["Mehrere Kinder spielen Fußball auf einer Wiese im Park","Zwei Tore stehen an den Enden des Spielfelds","Ein Kind rennt gerade zum Ball","Im Hintergrund: Bäume, eine Bank, schönes Wetter"],
+  model:"Auf dem Bild sehe ich mehrere Kinder, die zusammen im Park Fußball spielen. Sie tragen verschiedenfarbige Trikots – rot, blau, gelb und grün – und rennen alle in Richtung des Balls. An beiden Seiten des Rasens stehen kleine Tore. Es ist offensichtlich ein schöner, sonniger Tag, denn im Hintergrund sieht man Bäume und blauen Himmel. Auf einer Bank könnte gleich jemand zuschauen.\n\nIch finde es schön, dass Kinder draußen aktiv sind, statt nur vor dem Bildschirm zu sitzen. Als ich selbst ein Kind war, habe ich auch fast jeden Nachmittag mit Freunden im Park Fußball gespielt. Sport im Team lehrt außerdem, miteinander zu spielen und zusammenzuhalten."
+},
+{
+  img:"foto5.svg",
+  title:"Foto 5: Eine volle U-Bahn",
+  hints:["Viele Fahrgäste stehen dicht gedrängt in der Bahn","Alle halten sich an gelben Haltestangen fest","Zwei Personen sitzen auf den roten Sitzbänken","Draußen ist es dunkel – die Bahn fährt durch einen Tunnel"],
+  model:"Auf dem Bild sehe ich das Innere einer U-Bahn, die sehr voll ist. Viele Fahrgäste stehen eng zusammen und halten sich an den gelben Haltestangen fest, weil es keine freien Sitzplätze mehr gibt. Nur zwei Personen sitzen auf den roten Bänken. Durch die Fenster sieht man, dass die Bahn gerade durch einen dunklen Tunnel fährt, es ist also wahrscheinlich mitten in der Stadt.\n\nDas erinnert mich an meine tägliche Fahrt zur Arbeit – auch bei uns ist die Bahn morgens und nachmittags oft so voll. Ich finde öffentliche Verkehrsmittel trotzdem praktisch, weil man schnell und ohne Stau ans Ziel kommt, auch wenn es zu den Stoßzeiten manchmal unangenehm eng ist."
+},
+{
+  img:"foto6.svg",
+  title:"Foto 6: Ärger in einer Besprechung",
+  hints:["Ein Mann steht auf und regt sich sichtlich auf","Zwei Kollegen sitzen am Tisch und schauen überrascht","Auf dem Tisch liegen ein Laptop und Papiere","Es sieht nach einer angespannten Situation im Büro aus"],
+  model:"Auf dem Bild sehe ich eine Besprechung in einem Büro. Ein Mann ist aufgestanden und regt sich offensichtlich über etwas auf – er hebt die Arme und wirkt sehr aufgebracht. Zwei Kolleginnen und Kollegen sitzen noch am Tisch und schauen überrascht. Auf dem Tisch liegen ein Laptop und ein paar Papiere, vielleicht ging es um ein Projekt oder eine schwierige Entscheidung.\n\nSolche angespannten Situationen kenne ich auch aus meinem Berufsleben – manchmal ist man einfach im Stress oder unter Druck. Ich finde es wichtig, in solchen Momenten ruhig zu bleiben und das Gespräch später sachlich fortzusetzen, statt die Situation noch schlimmer zu machen."
+},
 ],
 
 teil7: [
@@ -190,6 +274,24 @@ teil7: [
   situation:"Ihnen wird ein Nebenjob am Wochenende angeboten. Sie könnten damit gut Geld dazuverdienen, hätten aber weniger Freizeit. Sie überlegen, ob Sie den Job annehmen sollen.",
   pro:["Man verdient zusätzliches Geld, z. B. für den Urlaub.","Man sammelt neue Berufserfahrung.","Man lernt neue Menschen kennen.","Das zusätzliche Einkommen gibt Sicherheit."],
   contra:["weniger Zeit für Familie, Freunde und Hobbys","Ohne Pausen wird man schneller krank.","Die Hauptarbeit kann unter der Müdigkeit leiden.","Vielleicht muss man Steuern nachzahlen."]
+},
+{
+  set:"Übungssatz 9 (aus Prüfungsberichten)",
+  situation:"Sie müssen aus beruflichen Gründen in eine andere Stadt ziehen. Sie haben noch keine eigene Wohnung gefunden und könnten vorübergehend bei Ihrer 75-jährigen Tante wohnen.",
+  pro:["Es ist günstiger als eine eigene Wohnung.","Man ist in der neuen Stadt nicht ganz allein.","Die Tante freut sich sicher über Gesellschaft.","Man kann sich in Ruhe eine eigene Wohnung suchen."],
+  contra:["Man hat wenig Privatsphäre.","Man hat andere Lebensgewohnheiten als die Tante.","Es kann die Beziehung zur Tante belasten.","Man kann nicht einfach Freunde spontan einladen."]
+},
+{
+  set:"Übungssatz 10 (Urlaub)",
+  situation:"Sie planen Ihren nächsten Urlaub. Sie überlegen, ob Sie eine weite Reise ins Ausland machen oder lieber zu Hause bleiben und Ausflüge in die nähere Umgebung machen (‚Balkonien‘).",
+  pro:["Eine Fernreise zeigt neue Länder und Kulturen.","Man erholt sich gut, wenn man wirklich weit weg ist.","Zu Hause bleiben spart viel Geld.","In der Nähe zu bleiben ist entspannter, ohne langes Reisen."],
+  contra:["Fernreisen sind teuer und anstrengend (langer Flug).","Fliegen ist nicht gut für die Umwelt.","Zu Hause hat man vielleicht weniger richtige Erholung.","Man sieht immer nur die gleiche Umgebung."]
+},
+{
+  set:"Übungssatz 11 (Arztbesuch)",
+  situation:"Ihre Arztpraxis bietet jetzt an, Termine online zu buchen, statt anzurufen. Sie überlegen, ob Sie das nutzen möchten oder lieber weiter anrufen.",
+  pro:["Online kann man auch nachts oder am Wochenende einen Termin buchen.","Man muss nicht in der Warteschleife am Telefon warten.","Man sieht sofort, welche Termine frei sind.","Man kann den Termin bequem verschieben."],
+  contra:["Nicht jeder kennt sich gut mit Online-Formularen aus.","Bei dringenden Problemen ist ein Anruf oft schneller.","Man kann der Arzthelferin nicht direkt Fragen stellen.","Man braucht Internet und ein Gerät dafür."]
 },
 ],
 }

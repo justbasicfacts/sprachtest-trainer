@@ -38,6 +38,20 @@ function isTransient(error: unknown): boolean {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/** Kombiniert mehrere AbortSignals zu einem (ohne auf AbortSignal.any angewiesen zu
+    sein, das nicht in jedem Zielbrowser verfügbar ist). */
+function combineSignals(signals: AbortSignal[]): AbortSignal {
+  const controller = new AbortController()
+  for (const s of signals) {
+    if (s.aborted) {
+      controller.abort(s.reason)
+      break
+    }
+    s.addEventListener('abort', () => controller.abort(s.reason), { once: true })
+  }
+  return controller.signal
+}
+
 /** Gemini-Schema im REST-Format (Teilmenge von OpenAPI, Typen in GROSSBUCHSTABEN). */
 export type GeminiSchema = Record<string, unknown>
 
@@ -54,6 +68,13 @@ interface GeminiJsonOpts<T> {
   /** Abbruch pro Versuch in ms (Standard 30 s) - sonst kann eine hängende
       Verbindung ewig im "pending"-Zustand bleiben und der Retry greift nie. */
   timeoutMs?: number
+  /** Externes Abbrechen (z. B. ein "Abbrechen"-Button in der UI) - bricht den
+      laufenden Versuch UND alle weiteren Retries/den Fallback sofort ab. */
+  signal?: AbortSignal
+  /** Wird vor jedem Versuch aufgerufen, z. B. um "Versuch 2/3 …" oder "Weiche auf
+      leichteres Modell aus" in der UI anzuzeigen, statt dass die Oberfläche beim
+      Warten auf Retries/Fallback wie eingefroren wirkt. */
+  onAttempt?: (info: { attempt: number; model: string; isFallback: boolean }) => void
 }
 
 /** Ein strukturierter JSON-Aufruf: System-Prompt + User-Prompt → per zod validiertes Objekt.
@@ -64,23 +85,30 @@ export async function geminiJson<T>(opts: GeminiJsonOpts<T>): Promise<T> {
   const delays = [0, 1500, 4000] // ms vor Versuch 1, 2, 3
   let lastError: unknown
 
+  const abortedError = () => new Error('Abgebrochen. Du kannst es jederzeit erneut versuchen.')
+
   for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (opts.signal?.aborted) throw abortedError()
     if (delays[attempt] > 0) await sleep(delays[attempt])
+    if (opts.signal?.aborted) throw abortedError()
+    opts.onAttempt?.({ attempt: attempt + 1, model: opts.model, isFallback: false })
     try {
       return await callOnce(opts.model, key, opts)
     } catch (error) {
+      if (opts.signal?.aborted) throw abortedError()
       lastError = error
       if (!isTransient(error)) break // 400er usw.: sofort aufgeben
       console.warn(`[geminiClient] ${opts.model} Versuch ${attempt + 1} fehlgeschlagen:`, error)
     }
   }
 
-  if (opts.fallbackModel && isTransient(lastError)) {
+  if (opts.fallbackModel && isTransient(lastError) && !opts.signal?.aborted) {
     console.warn(`[geminiClient] weiche auf ${opts.fallbackModel} aus`)
+    opts.onAttempt?.({ attempt: 1, model: opts.fallbackModel, isFallback: true })
     try {
       return await callOnce(opts.fallbackModel, key, opts)
     } catch (fallbackError) {
-      lastError = fallbackError
+      lastError = opts.signal?.aborted ? abortedError() : fallbackError
     }
   }
 
@@ -93,9 +121,11 @@ export async function geminiJson<T>(opts: GeminiJsonOpts<T>): Promise<T> {
 }
 
 async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>): Promise<T> {
+  const timeoutSignal = AbortSignal.timeout(opts.timeoutMs ?? 30_000)
+  const signal = opts.signal ? combineSignals([timeoutSignal, opts.signal]) : timeoutSignal
   const res = await fetch(`${API_BASE}/${model}:generateContent`, {
     method: 'POST',
-    signal: AbortSignal.timeout(opts.timeoutMs ?? 30_000),
+    signal,
     headers: {
       'Content-Type': 'application/json',
       'x-goog-api-key': key,

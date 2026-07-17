@@ -56,7 +56,7 @@ function Timer({ sec }: { sec: number }) {
   )
 }
 
-const ICONS = ['📘', '📗', '📙', '📕', '📔', '📒', '📓', '📚']
+const ICONS = ['📘', '📗', '📙', '📕', '📔', '📒', '📓', '📚', '📖']
 
 export default function Exam({ setExamActive }: { setExamActive: (active: boolean) => void }) {
   const [testIdx, setTestIdx] = useState<number | null>(null)

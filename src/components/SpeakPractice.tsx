@@ -1,7 +1,7 @@
 /* Echtes Sprech-Training: nimmt die Antwort auf (Live-Transkript + Audioaufnahme,
    siehe useVoiceCapture) und holt KI-Feedback nach aufgaben-spezifischen Kriterien
    (siehe ai/scoreSpeaking.ts). Mit Audio bewertet Gemini auch die Aussprache. */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { scoreSpeaking, type SpeakingScore } from '../ai/scoreSpeaking'
 import { blobToWavBase64 } from '../ai/audioWav'
 import { useVoiceCapture } from './useVoiceCapture'
@@ -12,12 +12,28 @@ export function SpeakPractice({ context, criteria }: { context: string; criteria
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<SpeakingScore | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState('')
+  const [elapsed, setElapsed] = useState(0)
+  const abortRef = useRef<AbortController | null>(null)
 
   const canGetFeedback = !cap.recording && (cap.audioBlob !== null || cap.wordCount >= 5)
 
+  // Damit der Feedback-Button während einer laufenden Anfrage nie "eingefroren" wirkt:
+  // Sekundenzähler, solange geladen wird (Audio-Analyse + Retries können eine Weile dauern).
+  useEffect(() => {
+    if (!loading) return
+    const started = Date.now()
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000)
+    return () => clearInterval(t)
+  }, [loading])
+
   const getFeedback = async () => {
+    const controller = new AbortController()
+    abortRef.current = controller
     setLoading(true)
     setError(null)
+    setStatus('')
+    setElapsed(0)
     try {
       let audio: { mimeType: string; base64: string } | undefined
       if (cap.audioBlob) {
@@ -29,6 +45,9 @@ export function SpeakPractice({ context, criteria }: { context: string; criteria
       }
       const r = await scoreSpeaking({
         data: { context, criteria, transcript: cap.transcript.trim() || undefined, audio },
+        signal: controller.signal,
+        onAttempt: ({ attempt, isFallback }) =>
+          setStatus(isFallback ? 'Weiche auf ein schnelleres Modell aus …' : attempt > 1 ? `Versuch ${attempt} …` : ''),
       })
       setResult(r)
       if (!cap.transcript.trim() && r.transcript) cap.setTranscript(r.transcript)
@@ -36,8 +55,11 @@ export function SpeakPractice({ context, criteria }: { context: string; criteria
       setError(err instanceof Error ? err.message : 'Das Feedback ist fehlgeschlagen.')
     } finally {
       setLoading(false)
+      abortRef.current = null
     }
   }
+
+  const cancelFeedback = () => abortRef.current?.abort()
 
   if (!cap.supported) {
     return (
@@ -101,10 +123,21 @@ export function SpeakPractice({ context, criteria }: { context: string; criteria
           )}
           <HStack gap="$2.5" alignItems="center" mt="$2" flexWrap="wrap">
             <Btn variant="gold" onPress={getFeedback} disabled={loading || !canGetFeedback}>
-              {loading ? 'KI bewertet …' : cap.audioBlob ? '💬 Feedback holen (mit Aussprache)' : '💬 Feedback holen'}
+              {loading ? `KI bewertet … (${elapsed}s)` : cap.audioBlob ? '💬 Feedback holen (mit Aussprache)' : '💬 Feedback holen'}
             </Btn>
+            {loading && (
+              <Btn variant="secondary" small onPress={cancelFeedback}>
+                Abbrechen
+              </Btn>
+            )}
             {!canGetFeedback && !cap.recording && !cap.audioBlob && <Muted>Sprich mindestens einen ganzen Satz.</Muted>}
           </HStack>
+          {loading && (
+            <Muted mt="$1">
+              {status || (cap.audioBlob ? 'Die KI analysiert deine Aufnahme …' : 'Die KI liest deine Antwort …')}
+              {elapsed >= 15 && ' Das kann bei Audioaufnahmen bis zu ein bis zwei Minuten dauern.'}
+            </Muted>
+          )}
         </Box>
       )}
 

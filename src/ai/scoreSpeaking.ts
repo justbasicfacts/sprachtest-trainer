@@ -31,6 +31,10 @@ export async function scoreSpeaking(input: {
     transcript?: string
     audio?: { mimeType: string; base64: string }
   }
+  /** Zum Abbrechen (z. B. "Abbrechen"-Button), falls die KI-Anfrage zu lange dauert. */
+  signal?: AbortSignal
+  /** Für UI-Fortschritt ("Versuch 2/3 …"), damit die Oberfläche während Retries/Fallback nicht eingefroren wirkt. */
+  onAttempt?: (info: { attempt: number; model: string; isFallback: boolean }) => void
 }): Promise<SpeakingScore> {
   const { context, criteria, transcript, audio } = input.data
   const n = criteria.length
@@ -146,6 +150,8 @@ export async function scoreSpeaking(input: {
     audio,
     responseSchema,
     zodSchema,
+    signal: input.signal,
+    onAttempt: input.onAttempt,
   })
 }
 
@@ -173,6 +179,8 @@ export async function scoreSpeakingExamPart(input: {
     transcript?: string
     audio?: { mimeType: string; base64: string }
   }
+  signal?: AbortSignal
+  onAttempt?: (info: { attempt: number; model: string; isFallback: boolean }) => void
 }): Promise<SpeakingPartScore> {
   const { context, criteria, maxPoints, transcript, audio } = input.data
   const hasAudio = !!audio
@@ -228,6 +236,8 @@ export async function scoreSpeakingExamPart(input: {
     audio,
     responseSchema: { type: 'OBJECT', properties, required },
     zodSchema,
+    signal: input.signal,
+    onAttempt: input.onAttempt,
   })
 
   return { ...raw, points: Math.max(0, Math.min(maxPoints, Math.round(raw.points))) }

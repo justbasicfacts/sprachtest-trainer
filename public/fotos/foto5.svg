@@ -1,0 +1,73 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wagen-Innenraum Hintergrund -->
+  <rect x="0" y="0" width="800" height="600" fill="#E7E9EC"/>
+  <!-- Decke -->
+  <rect x="0" y="0" width="800" height="70" fill="#C9CDD3"/>
+  <!-- Fenster mit Tunnel-Dunkel -->
+  <rect x="30" y="90" width="180" height="140" rx="10" fill="#2B2F36"/>
+  <rect x="590" y="90" width="180" height="140" rx="10" fill="#2B2F36"/>
+  <g fill="#4A5560" opacity="0.6">
+    <circle cx="90" cy="150" r="6"/>
+    <circle cx="150" cy="170" r="4"/>
+    <circle cx="650" cy="140" r="5"/>
+    <circle cx="720" cy="180" r="6"/>
+  </g>
+  <!-- Boden -->
+  <rect x="0" y="540" width="800" height="60" fill="#9AA0A8"/>
+  <!-- Sitzbank links -->
+  <rect x="20" y="360" width="200" height="150" rx="14" fill="#D3462F"/>
+  <rect x="20" y="360" width="200" height="14" fill="#B23A26"/>
+  <!-- Sitzbank rechts -->
+  <rect x="580" y="360" width="200" height="150" rx="14" fill="#D3462F"/>
+  <rect x="580" y="360" width="200" height="14" fill="#B23A26"/>
+  <!-- Haltestangen (senkrecht) -->
+  <g stroke="#F2C230" stroke-width="10" stroke-linecap="round">
+    <line x1="260" y1="70" x2="260" y2="530"/>
+    <line x1="400" y1="70" x2="400" y2="530"/>
+    <line x1="540" y1="70" x2="540" y2="530"/>
+  </g>
+  <!-- Haltegriffe (waagerecht oben) -->
+  <g stroke="#F2C230" stroke-width="8" stroke-linecap="round">
+    <line x1="230" y1="80" x2="290" y2="80"/>
+    <line x1="370" y1="80" x2="430" y2="80"/>
+    <line x1="510" y1="80" x2="570" y2="80"/>
+  </g>
+  <!-- Sitzende Person links -->
+  <g transform="translate(90,430)">
+    <rect x="-22" y="-30" width="44" height="60" rx="14" fill="#3D7DCB"/>
+    <circle cx="0" cy="-52" r="18" fill="#F1C6A0"/>
+  </g>
+  <!-- Sitzende Person rechts -->
+  <g transform="translate(700,430)">
+    <rect x="-22" y="-30" width="44" height="60" rx="14" fill="#6C6FA0"/>
+    <circle cx="0" cy="-52" r="18" fill="#8A5A3A"/>
+  </g>
+  <!-- Stehende Fahrgäste, dicht gedrängt -->
+  <g transform="translate(300,400)">
+    <rect x="-20" y="-70" width="40" height="110" rx="14" fill="#4C9A6B"/>
+    <circle cx="0" cy="-92" r="20" fill="#F1C6A0"/>
+    <line x1="0" y1="-40" x2="0" y2="-70" stroke="#4C9A6B" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(355,410)">
+    <rect x="-20" y="-70" width="40" height="110" rx="14" fill="#3D7DCB"/>
+    <circle cx="0" cy="-92" r="20" fill="#8A5A3A"/>
+  </g>
+  <g transform="translate(415,400)">
+    <rect x="-20" y="-70" width="40" height="110" rx="14" fill="#E0954A"/>
+    <circle cx="0" cy="-92" r="20" fill="#F1C6A0"/>
+    <line x1="0" y1="-55" x2="24" y2="-75" stroke="#E0954A" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(470,410)">
+    <rect x="-20" y="-70" width="40" height="110" rx="14" fill="#9C4FA8"/>
+    <circle cx="0" cy="-92" r="20" fill="#F1C6A0"/>
+  </g>
+  <g transform="translate(230,415)">
+    <rect x="-18" y="-64" width="36" height="100" rx="13" fill="#D3462F"/>
+    <circle cx="0" cy="-84" r="18" fill="#8A5A3A"/>
+  </g>
+  <g transform="translate(520,400)">
+    <rect x="-18" y="-64" width="36" height="100" rx="13" fill="#4C9A6B"/>
+    <circle cx="0" cy="-84" r="18" fill="#F1C6A0"/>
+    <line x1="0" y1="-48" x2="-22" y2="-64" stroke="#4C9A6B" stroke-width="9" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -82,4 +82,4 @@ export interface ExamData {
   redemittel: Redemittel
 }
 
-export type ExtraData = Pick<ExamData, 'teil1' | 'teil2' | 'teil3' | 'teil4' | 'teil5' | 'teil7'>
+export type ExtraData = Pick<ExamData, 'teil1' | 'teil2' | 'teil3' | 'teil4' | 'teil5' | 'teil6' | 'teil7'>

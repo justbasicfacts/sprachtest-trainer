@@ -47,3 +47,11 @@ export type GeneratedTeil1 = z.infer<typeof GeneratedTeil1Schema>
 export type GeneratedTeil2 = z.infer<typeof GeneratedTeil2Schema>
 export type GeneratedTeil3 = z.infer<typeof GeneratedTeil3Schema>
 export type GeneratedTeil4 = z.infer<typeof GeneratedTeil4Schema>
+
+/** KI-Zusammenfassung, wenn im Übungsmodus alle Aufgaben eines Teils erledigt sind. */
+export const PracticeSummarySchema = z.object({
+  summary: z.string().meta({ description: 'Kurze, motivierende Zusammenfassung (2-4 Sätze) der Leistung in diesem Übungsteil, auf Deutsch' }),
+  tips: z.array(z.string()).min(2).max(4).meta({ description: '2-4 konkrete, kurze Tipps zur Verbesserung, auf Deutsch' }),
+})
+
+export type PracticeSummary = z.infer<typeof PracticeSummarySchema>

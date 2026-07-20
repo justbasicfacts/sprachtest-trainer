@@ -6,6 +6,7 @@ import { Teil1, Teil2, Teil3, Teil4Prompt, WordCount, SelfAssess } from './Tasks
 import { db, saveGeneratedTask, type GeneratedTaskRecord } from '../db'
 import { generateTask } from '../ai/generateTask'
 import { summarizePractice } from '../ai/summarizePractice'
+import { generateModelAnswerTeil4 } from '../ai/generateModelAnswers'
 import type { PracticeSummary } from '../data/schemas'
 import { AiWritingScore } from './AiScore'
 import { openLayer, backLayer } from '../appHistory'
@@ -254,6 +255,9 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
   const [text, setText] = useState('')
   const [showCheck, setShowCheck] = useState(false)
   const [selfScore, setSelfScore] = useState<number | null>(null)
+  const [altLoading, setAltLoading] = useState(false)
+  const [altError, setAltError] = useState<string | null>(null)
+  const [altModel, setAltModel] = useState<string | null>(null)
 
   // Fertig-Status + Punkte je Teil ermitteln, damit Summary/Next-Button einheitlich funktionieren
   let finished = false
@@ -345,6 +349,33 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
             <Text sx={{ whiteSpace: 'pre-line' }}>{t4.model}</Text>
           </Box>
         </Reveal>
+      </Box>
+      <Box mt="$2">
+        <Btn
+          disabled={altLoading}
+          onPress={async () => {
+            setAltLoading(true)
+            setAltError(null)
+            try {
+              const result = await generateModelAnswerTeil4(t4)
+              setAltModel(result)
+            } catch (err) {
+              setAltError(err instanceof Error ? err.message : 'Fehler beim Generieren')
+            } finally {
+              setAltLoading(false)
+            }
+          }}
+          variant="secondary"
+        >
+          {altLoading ? '💭 Generiere…' : '💡 Alternative Lösung generieren'}
+        </Btn>
+        {altError && <Text color="$error600" mt="$2" size="sm">{altError}</Text>}
+        {altModel && (
+          <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$md" p="$3.5" mt="$2">
+            <Text fontWeight="$bold" mb="$1.5" size="sm">Alternative Lösung:</Text>
+            <Text sx={{ whiteSpace: 'pre-line' }}>{altModel}</Text>
+          </Box>
+        )}
       </Box>
       {summary}
     </Teil4Prompt>

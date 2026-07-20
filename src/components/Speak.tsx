@@ -4,6 +4,8 @@ import { openLayer, backLayer } from '../appHistory'
 import { DATA } from '../data/content'
 import { TranslateZone } from './useWordTranslate'
 import { SpeakPractice } from './SpeakPractice'
+import { generateModelAnswerTeil5, generateModelAnswerTeil6, generateModelAnswerTeil7 } from '../ai/generateModelAnswers'
+import type { Teil6Photo, Teil7Situation } from '../data/types'
 import {
   Box, HStack, VStack, Text, Heading, Pressable,
   AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, Btn, FootActions, Chip,
@@ -71,29 +73,7 @@ export default function Speak() {
         <Muted>Teil 6 · Über ein Foto sprechen · In der Prüfung wählst du 1 von 3 Fotos</Muted>
         {DATA.teil6.map((f) => (
           <TranslateZone key={f.title}>
-            <AppCard>
-              <CardTitle>{f.title}</CardTitle>
-              <img
-                src={FOTO_BASE + f.img}
-                alt={f.title}
-                style={{ width: '100%', borderRadius: 12, margin: '10px 0', display: 'block' }}
-              />
-              <Muted>Sprich 2–3 Minuten. Diese Stichworte helfen:</Muted>
-              <HStack flexWrap="wrap" mt="$1.5">
-                {f.hints.map((h) => <Chip key={h}>{h}</Chip>)}
-              </HStack>
-              <SpeakPractice
-                key={f.title}
-                context={`Teil 6 (Über ein Foto sprechen). Foto: „${f.title}“. Stichworte zum Foto: ${f.hints.join(', ')}. Der Lernende soll das Foto 2-3 Minuten beschreiben.`}
-                criteria={[
-                  'Beschrieben, was auf dem Foto zu sehen ist (Personen, Ort, Gegenstände)',
-                  'Beschrieben, was gerade passiert',
-                  'Eine Vermutung geäußert („Ich denke, dass …“, „Wahrscheinlich …“)',
-                  'Eigene Erfahrung oder Meinung dazu gesagt',
-                ]}
-              />
-              <ModelAnswer label="💡 Musterbeschreibung anzeigen" text={f.model} />
-            </AppCard>
+            <Part6Photo photo={f} />
           </TranslateZone>
         ))}
         <AppCard>
@@ -101,7 +81,7 @@ export default function Speak() {
           <Text>
             1️⃣ <Text fontWeight="$bold">Was sehe ich?</Text> Personen, Ort, Gegenstände{'\n'}
             2️⃣ <Text fontWeight="$bold">Was passiert?</Text> Was machen die Personen gerade?{'\n'}
-            3️⃣ <Text fontWeight="$bold">Was vermute ich?</Text> „Ich denke, dass …“, „Wahrscheinlich …“{'\n'}
+            3️⃣ <Text fontWeight="$bold">Was vermute ich?</Text> "Ich denke, dass...", "Wahrscheinlich..."{'\n'}
             4️⃣ <Text fontWeight="$bold">Mein Bezug:</Text> eigene Erfahrung oder Meinung dazu
           </Text>
         </AppCard>
@@ -116,31 +96,13 @@ export default function Speak() {
         <Muted>Teil 7 · Eine Situation besprechen · Sprich mit dem Prüfer über Vorteile und Nachteile</Muted>
         {DATA.teil7.map((s) => (
           <TranslateZone key={s.set}>
-            <AppCard>
-              <Box alignSelf="flex-start" bg="$primary50" borderRadius="$full" px="$3" py="$0.5" mb="$2">
-                <Text size="xs" fontWeight="$bold" color="$primary700">{s.set}</Text>
-              </Box>
-              <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$lg" p="$3.5" mb="$2">
-                <Text fontWeight="$medium">{s.situation}</Text>
-              </Box>
-              <Muted>Überlege zuerst selbst 2 Vorteile und 2 Nachteile – dann vergleiche:</Muted>
-              <SpeakPractice
-                key={s.set}
-                context={`Teil 7 (Eine Situation besprechen). Situation: „${s.situation}“. Der Lernende soll Vorteile und Nachteile besprechen und Stellung nehmen.`}
-                criteria={[
-                  'Mindestens einen Vorteil genannt',
-                  'Mindestens einen Nachteil genannt',
-                  'Eigene Meinung mit Begründung gesagt (z. B. mit „weil“ oder „deshalb“)',
-                ]}
-              />
-              <ProContra pro={s.pro} contra={s.contra} />
-            </AppCard>
+            <Part7Situation situation={s} />
           </TranslateZone>
         ))}
         <AppCard>
           <CardTitle>Tipp für Teil 7</CardTitle>
           <Text>
-            Nimm am Ende <Text fontWeight="$bold">selbst Stellung</Text>: „Für mich überwiegen die Vorteile, weil …“ – die
+            Nimm am Ende <Text fontWeight="$bold">selbst Stellung</Text>: "Für mich überwiegen die Vorteile, weil..." - die
             Prüfer möchten sehen, dass du deine Meinung begründen kannst.
           </Text>
         </AppCard>
@@ -227,15 +189,15 @@ function Flashcards() {
       <TranslateZone>
         <AppCard>
           <Text size="lg" fontWeight="$semibold" mb="$4" sx={{ textAlign: 'center' }}>
-            „{f.q}“
+            "{f.q}"
           </Text>
-          <Muted>Antworte zuerst laut in 2–3 Sätzen …</Muted>
+          <Muted>Antworte zuerst laut in 2-3 Saetzen...</Muted>
           <SpeakPractice
             key={f.q}
-            context={`Teil 5 (Kennenlernen). Frage des Prüfers: „${f.q}“. Der Lernende soll in 2-3 Sätzen antworten.`}
+            context={`Teil 5 (Kennenlernen). Frage des Prufers: ${f.q}. Der Lernende soll in 2-3 Saetzen antworten.`}
             criteria={[
-              'Die Frage wirklich beantwortet (2-3 Sätze, nicht nur „ja“/„nein“)',
-              'Einen Grund oder ein Beispiel genannt (z. B. mit „weil“)',
+              'Die Frage wirklich beantwortet (2-3 Saetze, nicht nur ja/nein)',
+              'Einen Grund oder ein Beispiel genannt (z. B. mit weil)',
             ]}
           />
           {show && (
@@ -244,13 +206,158 @@ function Flashcards() {
             </Box>
           )}
           <FootActions>
-            <Btn variant="secondary" onPress={() => setShow(true)}>Musterantwort 💡</Btn>
-            <Btn onPress={() => { setIdx((idx + 1) % DATA.teil5.length); setShow(false) }}>Nächste Frage →</Btn>
+            <Btn variant="secondary" onPress={() => setShow(true)}>Musterantwort</Btn>
+            <Btn onPress={() => { setIdx((idx + 1) % DATA.teil5.length); setShow(false) }}>Naechste Frage</Btn>
           </FootActions>
+          <AlternativeAnswer question={f.q} />
         </AppCard>
       </TranslateZone>
       </motion.div>
-      <Muted>Tipp: Antworte nie nur mit „Ja“ oder „Nein“ – gib immer ein Beispiel oder einen Grund (…, weil …). Du darfst auch selbst Fragen stellen!</Muted>
+      <Muted>Tipp: Antworte nie nur mit ja oder nein - gib immer ein Beispiel oder einen Grund (weil...). Du darfst auch selbst Fragen stellen!</Muted>
     </>
+  )
+}
+
+function AlternativeAnswer({ question }: { question: string }) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [answer, setAnswer] = useState<string | null>(null)
+
+  const handleGenerate = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await generateModelAnswerTeil5(question)
+      setAnswer(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Generieren')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Box mt="$3">
+      <Btn disabled={loading} onPress={handleGenerate} variant="secondary">
+        {loading ? 'Generiere...' : 'Alternative Antwort generieren'}
+      </Btn>
+      {error && <Text color="$error600" mt="$2" size="sm">{error}</Text>}
+      {answer && (
+        <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$md" p="$3.5" mt="$2">
+          <Text fontWeight="$bold" mb="$1.5" size="sm">Alternative Antwort:</Text>
+          <Text sx={{ whiteSpace: 'pre-line' }}>{answer}</Text>
+        </Box>
+      )}
+    </Box>
+  )
+}
+
+function Part6Photo({ photo }: { photo: Teil6Photo }) {
+  const [altLoading, setAltLoading] = useState(false)
+  const [altError, setAltError] = useState<string | null>(null)
+  const [altDescription, setAltDescription] = useState<string | null>(null)
+
+  const handleGenerateAlt = async () => {
+    setAltLoading(true)
+    setAltError(null)
+    try {
+      const result = await generateModelAnswerTeil6(photo)
+      setAltDescription(result)
+    } catch (err) {
+      setAltError(err instanceof Error ? err.message : 'Fehler beim Generieren')
+    } finally {
+      setAltLoading(false)
+    }
+  }
+
+  return (
+    <AppCard>
+      <CardTitle>{photo.title}</CardTitle>
+      <img
+        src={FOTO_BASE + photo.img}
+        alt={photo.title}
+        style={{ width: '100%', borderRadius: 12, margin: '10px 0', display: 'block' }}
+      />
+      <Muted>Sprich 2-3 Minuten. Diese Stichworte helfen:</Muted>
+      <HStack flexWrap="wrap" mt="$1.5">
+        {photo.hints.map((h) => <Chip key={h}>{h}</Chip>)}
+      </HStack>
+      <SpeakPractice
+        key={photo.title}
+        context={`Teil 6. Foto: ${photo.title}. Der Lernende beschreibt das Foto 2-3 Minuten.`}
+        criteria={[
+          'Beschrieben, was auf dem Foto zu sehen ist',
+          'Beschrieben, was gerade passiert',
+          'Eine Vermutung geaeuert',
+          'Eigene Erfahrung oder Meinung dazu gesagt',
+        ]}
+      />
+      <ModelAnswer label="Musterbeschreibung anzeigen" text={photo.model} />
+      <Box mt="$3">
+        <Btn disabled={altLoading} onPress={handleGenerateAlt} variant="secondary">
+          {altLoading ? 'Generiere...' : 'Alternative Beschreibung generieren'}
+        </Btn>
+        {altError && <Text color="$error600" mt="$2" size="sm">{altError}</Text>}
+        {altDescription && (
+          <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$md" p="$3.5" mt="$2">
+            <Text fontWeight="$bold" mb="$1.5" size="sm">Alternative Beschreibung:</Text>
+            <Text sx={{ whiteSpace: 'pre-line' }}>{altDescription}</Text>
+          </Box>
+        )}
+      </Box>
+    </AppCard>
+  )
+}
+
+function Part7Situation({ situation }: { situation: Teil7Situation }) {
+  const [altLoading, setAltLoading] = useState(false)
+  const [altError, setAltError] = useState<string | null>(null)
+  const [altArguments, setAltArguments] = useState<{ pro: string[]; contra: string[] } | null>(null)
+
+  const handleGenerateAlt = async () => {
+    setAltLoading(true)
+    setAltError(null)
+    try {
+      const result = await generateModelAnswerTeil7(situation)
+      setAltArguments(result)
+    } catch (err) {
+      setAltError(err instanceof Error ? err.message : 'Fehler beim Generieren')
+    } finally {
+      setAltLoading(false)
+    }
+  }
+
+  return (
+    <AppCard>
+      <Box alignSelf="flex-start" bg="$primary50" borderRadius="$full" px="$3" py="$0.5" mb="$2">
+        <Text size="xs" fontWeight="$bold" color="$primary700">{situation.set}</Text>
+      </Box>
+      <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$lg" p="$3.5" mb="$2">
+        <Text fontWeight="$medium">{situation.situation}</Text>
+      </Box>
+      <Muted>Ueberleg zuerst selbst 2 Vorteile und 2 Nachteile - dann vergleiche:</Muted>
+      <SpeakPractice
+        key={situation.set}
+        context={`Teil 7. Situation: ${situation.situation}. Der Lernende diskutiert Vor- und Nachteile.`}
+        criteria={[
+          'Mindestens einen Vorteil genannt',
+          'Mindestens einen Nachteil genannt',
+          'Eigene Meinung mit Begruendung gesagt',
+        ]}
+      />
+      <ProContra pro={situation.pro} contra={situation.contra} />
+      <Box mt="$3">
+        <Btn disabled={altLoading} onPress={handleGenerateAlt} variant="secondary">
+          {altLoading ? 'Generiere...' : 'Alternative Argumente generieren'}
+        </Btn>
+        {altError && <Text color="$error600" mt="$2" size="sm">{altError}</Text>}
+        {altArguments && (
+          <Box mt="$2">
+            <ProContra pro={altArguments.pro} contra={altArguments.contra} />
+            <Text size="sm" color="$textLight600" mt="$2">(Alternative Argumente)</Text>
+          </Box>
+        )}
+      </Box>
+    </AppCard>
   )
 }

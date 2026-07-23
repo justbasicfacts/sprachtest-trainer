@@ -252,6 +252,9 @@ interface PracticeTaskProps {
 function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList }: PracticeTaskProps) {
   const [a1, setA1] = useState<number | undefined>(undefined)
   const [a2, setA2] = useState<(number | undefined)[]>([undefined, undefined, undefined, undefined])
+  // Erst nach explizitem Klick auf "Antwort abgeben" wird ausgewertet - ein versehentlicher
+  // Klick auf eine Anzeige/Überschrift/richtig-falsch-Option darf nicht sofort die Lösung zeigen.
+  const [submitted, setSubmitted] = useState(false)
   const [text, setText] = useState('')
   const [showCheck, setShowCheck] = useState(false)
   const [selfScore, setSelfScore] = useState<number | null>(null)
@@ -263,20 +266,24 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
   let finished = false
   let points = 0
   let max = 0
+  let canSubmit = false
 
   if (part === 1) {
     const t1 = d as Teil1Task
-    finished = a1 !== undefined
+    canSubmit = a1 !== undefined
+    finished = submitted
     max = 2.5
     points = a1 === t1.correct ? 2.5 : 0
   } else if (part === 2) {
     const t2 = d as Teil2Task
-    finished = a2.every((v) => v !== undefined)
+    canSubmit = a2.every((v) => v !== undefined)
+    finished = submitted
     max = t2.items.length
     points = t2.items.reduce((sum, it, i) => sum + (a2[i] === (it.a ? 1 : 0) ? 1 : 0), 0)
   } else if (part === 3) {
     const t3 = d as Teil3Task
-    finished = a1 !== undefined
+    canSubmit = a1 !== undefined
+    finished = submitted
     max = 2.5
     points = a1 === t3.correct ? 2.5 : 0
   } else {
@@ -295,10 +302,17 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
     <TaskDoneSummary idx={idx} poolLength={poolLength} points={points} max={max} onNext={onNext} onBack={onBackToList} />
   )
 
+  const submitButton = !submitted && (
+    <FootActions>
+      <Btn disabled={!canSubmit} onPress={() => setSubmitted(true)}>Antwort abgeben ✔</Btn>
+    </FootActions>
+  )
+
   if (part === 1) {
     return (
       <>
-        <Teil1 d={d as Teil1Task} ans={a1} onPick={setA1} mode="practice" />
+        <Teil1 d={d as Teil1Task} ans={a1} onPick={setA1} mode="practice" submitted={submitted} />
+        {submitButton}
         {summary}
       </>
     )
@@ -306,7 +320,14 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
   if (part === 2) {
     return (
       <>
-        <Teil2 d={d as Teil2Task} ans={a2} onPick={(i, v) => setA2((a) => a.map((x, j) => (j === i ? v : x)))} mode="practice" />
+        <Teil2
+          d={d as Teil2Task}
+          ans={a2}
+          onPick={(i, v) => setA2((a) => a.map((x, j) => (j === i ? v : x)))}
+          mode="practice"
+          submitted={submitted}
+        />
+        {submitButton}
         {summary}
       </>
     )
@@ -314,7 +335,8 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
   if (part === 3) {
     return (
       <>
-        <Teil3 d={d as Teil3Task} ans={a1} onPick={setA1} mode="practice" />
+        <Teil3 d={d as Teil3Task} ans={a1} onPick={setA1} mode="practice" submitted={submitted} />
+        {submitButton}
         {summary}
       </>
     )

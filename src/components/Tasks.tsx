@@ -15,10 +15,13 @@ export interface Teil1Props {
   ans: number | undefined
   onPick: (i: number) => void
   mode: Mode
+  /** Im Übungsmodus wird erst nach explizitem "Antwort abgeben" ausgewertet,
+      damit ein versehentlicher Klick nicht sofort die Lösung verrät. */
+  submitted?: boolean
 }
 
-export function Teil1({ d, ans, onPick, mode }: Teil1Props) {
-  const revealed = mode === 'review' || (mode === 'practice' && ans !== undefined)
+export function Teil1({ d, ans, onPick, mode, submitted = false }: Teil1Props) {
+  const revealed = mode === 'review' || (mode === 'practice' && submitted)
   return (
     <TranslateZone>
       <Box mb="$6">
@@ -50,9 +53,11 @@ export interface Teil2Props {
   ans: (number | undefined)[]
   onPick: (i: number, v: number) => void
   mode: Mode
+  /** Im Übungsmodus wird erst nach explizitem "Antworten abgeben" ausgewertet. */
+  submitted?: boolean
 }
 
-export function Teil2({ d, ans, onPick, mode }: Teil2Props) {
+export function Teil2({ d, ans, onPick, mode, submitted = false }: Teil2Props) {
   return (
     <TranslateZone>
       <Box mb="$6">
@@ -62,7 +67,7 @@ export function Teil2({ d, ans, onPick, mode }: Teil2Props) {
         {d.items.map((it, i) => {
           const given = ans[i]
           const corr = it.a ? 1 : 0
-          const revealed = mode === 'review' || (mode === 'practice' && given !== undefined)
+          const revealed = mode === 'review' || (mode === 'practice' && submitted)
           return (
             <Box key={i} borderTopWidth={i === 0 ? '$0' : '$1'} borderTopColor="$borderLight200" py="$3">
               <HStack alignItems="center" gap="$2.5" flexWrap="wrap">
@@ -113,10 +118,12 @@ export interface Teil3Props {
   ans: number | undefined
   onPick: (i: number) => void
   mode: Mode
+  /** Im Übungsmodus wird erst nach explizitem "Antwort abgeben" ausgewertet. */
+  submitted?: boolean
 }
 
-export function Teil3({ d, ans, onPick, mode }: Teil3Props) {
-  const revealed = mode === 'review' || (mode === 'practice' && ans !== undefined)
+export function Teil3({ d, ans, onPick, mode, submitted = false }: Teil3Props) {
+  const revealed = mode === 'review' || (mode === 'practice' && submitted)
   return (
     <TranslateZone>
       <Box mb="$6">

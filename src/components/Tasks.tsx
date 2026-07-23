@@ -5,7 +5,7 @@ import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task } from '../data/types'
 import { TranslateZone } from './useWordTranslate'
 import {
   Box, HStack, VStack, Text, Pressable,
-  Tag, Btn, FootActions, SituationBox, ReadingBox, Feedback, ChoiceCard, Muted,
+  Tag, Btn, FootActions, SituationBox, ReadingBox, Feedback, ChoiceCard, Muted, Chip, Reveal,
 } from './ui/kit'
 
 export type Mode = 'practice' | 'exam' | 'review'
@@ -171,9 +171,77 @@ export function Teil4Prompt({ d, children }: Teil4PromptProps) {
           Denken Sie an eine passende <Text fontWeight="$bold">Anrede</Text> am Anfang und einen{' '}
           <Text fontWeight="$bold">Gruß</Text> am Ende.
         </Muted>
+        <WritingHints />
         {children}
       </Box>
     </TranslateZone>
+  )
+}
+
+/** Bausteine für jede Nachricht, von der Anrede bis zum Gruß - passend zu den
+    Formulierungshilfen. */
+const BRIEF_STRUCTURE = [
+  { step: '1️⃣ Anrede', hint: '„Sehr geehrte Damen und Herren,“ oder „Liebe Frau …,“' },
+  { step: '2️⃣ Grund nennen', hint: 'Warum schreiben Sie? „ich schreibe Ihnen, weil …“' },
+  { step: '3️⃣ Alle Punkte behandeln', hint: 'Zu jedem Punkt 1-2 Sätze, der Reihe nach' },
+  { step: '4️⃣ Schluss + Gruß', hint: '„Vielen Dank im Voraus!“ und „Mit freundlichen Grüßen“' },
+]
+
+/** Formulierungshilfen für Teil 4, nach Textabschnitt gruppiert (Anrede → Gruß). */
+const BRIEF_HINTS: { label: string; phrases: string[] }[] = [
+  {
+    label: 'Anrede',
+    phrases: ['Sehr geehrte Damen und Herren,', 'Sehr geehrte Frau …,', 'Sehr geehrter Herr …,', 'Liebe Frau …,', 'Lieber Herr …,', 'Hallo …,'],
+  },
+  {
+    label: 'Einleitung',
+    phrases: ['ich schreibe Ihnen, weil …', 'ich habe Ihre Anzeige gelesen und …', 'ich möchte Ihnen mitteilen, dass …', 'leider muss ich Ihnen sagen, dass …'],
+  },
+  {
+    label: 'Bitten & Fragen',
+    phrases: ['Ich möchte gern wissen, ob / wann / wie viel …', 'Könnten Sie mir bitte sagen, …?', 'Wäre es möglich, dass …?', 'Ich wäre Ihnen sehr dankbar, wenn …'],
+  },
+  {
+    label: 'Verbinden & Begründen',
+    phrases: ['…, weil …', '…, deshalb …', 'Außerdem …', 'Trotzdem …'],
+  },
+  {
+    label: 'Schluss',
+    phrases: ['Über eine schnelle Antwort würde ich mich freuen.', 'Vielen Dank im Voraus!', 'Bei Fragen können Sie mich gern anrufen.'],
+  },
+  {
+    label: 'Gruß',
+    phrases: ['Mit freundlichen Grüßen', 'Viele Grüße', 'Liebe Grüße'],
+  },
+]
+
+function WritingHints() {
+  return (
+    <Box mt="$3">
+      <Reveal label="💡 Formulierungshilfen & Aufbau">
+        <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
+          <VStack mb="$3" gap="$1">
+            {BRIEF_STRUCTURE.map((s) => (
+              <Text key={s.step} size="sm">
+                <Text fontWeight="$bold">{s.step}:</Text> {s.hint}
+              </Text>
+            ))}
+          </VStack>
+          {BRIEF_HINTS.map((group) => (
+            <Box key={group.label} mb="$2.5">
+              <Text size="sm" fontWeight="$bold" mb="$1" color="$primary700">
+                {group.label}
+              </Text>
+              <HStack flexWrap="wrap">
+                {group.phrases.map((p) => (
+                  <Chip key={p}>{p}</Chip>
+                ))}
+              </HStack>
+            </Box>
+          ))}
+        </Box>
+      </Reveal>
+    </Box>
   )
 }
 

@@ -10,6 +10,7 @@ import { generateModelAnswerTeil4 } from '../ai/generateModelAnswers'
 import type { PracticeSummary } from '../data/schemas'
 import { AiWritingScore } from './AiScore'
 import { openLayer, backLayer } from '../appHistory'
+import { loadPracticeResults, savePracticeResults } from '../resultsStorage'
 import {
   Box, VStack, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle, BackLink, Btn, FootActions, Reveal,
 } from './ui/kit'
@@ -30,10 +31,15 @@ export default function Practice() {
   const [idx, setIdx] = useState<number | null>(null)
 
   // Ergebnisse abgeschlossener Aufgaben (part-idx → Punkte/Maximum), für Häkchen/Kreuz
-  // in der Übersicht und für die KI-Zusammenfassung am Ende eines Teils.
-  const [results, setResults] = useState<Map<string, { points: number; max: number }>>(new Map())
+  // in der Übersicht und für die KI-Zusammenfassung am Ende eines Teils. In localStorage
+  // gespeichert, damit sie einen Seiten-Reload überleben statt zu verschwinden.
+  const [results, setResults] = useState<Map<string, { points: number; max: number }>>(() => loadPracticeResults())
   const markResult = (key: string, points: number, max: number) =>
     setResults((prev) => (prev.get(key)?.points === points ? prev : new Map(prev).set(key, { points, max })))
+
+  useEffect(() => {
+    savePracticeResults(results)
+  }, [results])
 
   const [summary, setSummary] = useState<PracticeSummary | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)

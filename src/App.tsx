@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { motion } from 'motion/react'
 import { clearLayers } from './appHistory'
+import { getTabFromHash, setTabHash, onHashChange, type TabId } from './routing'
 import { db, seedVocab, type ExamResult } from './db'
 import Practice from './components/Practice'
 import Exam from './components/Exam'
@@ -12,8 +13,6 @@ import {
   Page, AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, ConfirmDialog,
 } from './components/ui/kit'
 
-type TabId = 'home' | 'practice' | 'exam' | 'speak' | 'vocab'
-
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Start', icon: '🏠' },
   { id: 'practice', label: 'Üben', icon: '🎯' },
@@ -23,7 +22,9 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 ]
 
 export default function App() {
-  const [view, setView] = useState<TabId>('home')
+  // Startwert kommt aus dem URL-Hash (z. B. #/practice) - so landet ein Reload
+  // oder ein Lesezeichen wieder auf demselben Tab statt immer bei "Start".
+  const [view, setView] = useState<TabId>(() => getTabFromHash())
   const [examActive, setExamActive] = useState(false)
   // Ziel-Tab, der noch bestätigt werden muss, weil gerade eine Prüfung läuft
   const [pendingView, setPendingView] = useState<TabId | null>(null)
@@ -35,10 +36,25 @@ export default function App() {
     seedVocab()
   }, [])
 
+  // Hash beim Start einmal auf den tatsächlich aktiven Tab normalisieren (falls z. B.
+  // ein ungültiger Hash in der URL stand) und auf spätere manuelle Hash-Änderungen
+  // reagieren (Adresszeile, Lesezeichen, Vor/Zurück außerhalb der Layer-Navigation).
+  useEffect(() => {
+    setTabHash(view)
+    return onHashChange((tab) => {
+      clearLayers()
+      setExamActive(false)
+      setView(tab)
+      window.scrollTo(0, 0)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const go = (v: TabId) => {
     clearLayers() // offene Unter-Ebenen (Teil/Aufgabe/Prüfung) samt History-Einträgen verwerfen
     setExamActive(false)
     setView(v)
+    setTabHash(v)
     window.scrollTo(0, 0)
   }
 

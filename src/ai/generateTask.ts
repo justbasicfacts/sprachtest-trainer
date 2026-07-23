@@ -30,11 +30,30 @@ Vermieter, eine Ärztin) - niemals für die Testperson selbst. Beispiele im rich
 morgen nicht zur Arbeit kommen. Schreiben Sie eine Nachricht an Ihre Kollegin Frau Schneider." oder "Ihre Waschmaschine
 ist kaputt und kann nicht mehr repariert werden. Sie möchten schnell eine neue kaufen."
 
-WICHTIG für den Schwierigkeitsgrad: Falsche Antwortoptionen (Distraktoren) dürfen nicht auf den ersten Blick
-erkennbar falsch sein. Sie müssen zum gleichen Thema passen wie die richtige Lösung, sich aber in einem konkreten,
-prüfbaren Detail unterscheiden (z. B. falscher Ort, falsche Uhrzeit, falscher Preis, falsche Zielgruppe, ein Detail
-im Text, das nicht erfüllt ist). Eine Aufgabe, bei der zwei von drei Optionen offensichtlich themenfremd sind, ist
-zu leicht und nicht erlaubt.
+WICHTIG für den Schwierigkeitsgrad (das wird oft falsch gemacht - lies das genau): Falsche Antwortoptionen
+(Distraktoren) dürfen NICHT auf den ersten Blick oder nach dem ersten Halbsatz erkennbar falsch sein. Eine
+typische Anfänger-Falle: das entscheidende falsche Detail steht ganz am Anfang der Anzeige/Überschrift, sodass
+man beim Überfliegen sofort merkt "das passt nicht" - das ist zu leicht und NICHT erlaubt. Das ausschlaggebende
+Detail muss stattdessen natürlich in den Fließtext eingebettet sein, so wie es eine echte Anzeige wäre, und darf
+erst beim genauen Lesen des GANZEN Textes auffallen.
+
+Konkretes Beispiel (Teil 1), wie es richtig gemacht wird:
+Situation: "Ihre Waschmaschine ist kaputt und kann nicht mehr repariert werden. Sie möchten schnell eine neue
+kaufen, haben aber wenig Geld."
+- Richtig (b): "GROSSER LAGERVERKAUF! Neue Waschmaschinen, Kühlschränke und Herde bis zu 40 % reduziert.
+  Lieferung noch am selben Tag möglich." → erfüllt alles: neu, günstig, schnell.
+- Falsch (a): "WASCHMASCHINE KAPUTT? Unser Meisterbetrieb repariert alle Marken - schnell und mit Garantie."
+  → klingt zum Thema passend und wird erst beim genauen Lesen als falsch erkannt, weil hier repariert statt neu
+  gekauft wird - genau das schließt die Situation aber aus.
+- Falsch (c): "ZU VERSCHENKEN. Alter, aber funktionierender Wäschetrockner gegen Selbstabholung abzugeben. Nur am
+  Wochenende." → klingt nach einem günstigen Gerät, ist aber ein Trockner statt einer Waschmaschine - das merkt
+  man erst beim zweiten Lesen, nicht an der Überschrift.
+Beide falschen Optionen sind zum Thema "Haushaltsgerät kaufen/reparieren" passend formuliert; der Unterschied
+liegt in einem Detail mitten im Satz, nicht in der ersten auffälligen Zeile. So muss es bei jeder Aufgabe sein.
+
+Bevor du antwortest, prüfe selbst: Würde jemand, der nur die Überschrift/den ersten Satz jeder Option liest, die
+falschen Optionen zweifelsfrei erkennen? Falls ja, schreibe die Optionen um, bis das entscheidende Detail wirklich
+erst beim vollständigen Lesen auffällt.
 
 Antworte ausschließlich auf Deutsch und exakt im vorgegebenen JSON-Schema.`
 
@@ -148,15 +167,17 @@ export async function generateTask(input: {
     const result = await geminiJson({
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
-      timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
+      timeoutMs: 90_000, // HIGH-Thinking braucht mehr Zeit als die übliche Generierung
+      thinkingLevel: 'HIGH', // Plausible, nicht-triviale Distraktoren erfinden braucht echtes Abwägen
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-1-Aufgabe: eine kurze Situation ("Sie …"), in der die Testperson etwas sucht, und ' +
         'genau 3 Kleinanzeigen (a, b, c). Nur eine Anzeige erfüllt wirklich ALLE Details der Situation. Die ' +
         'anderen beiden Anzeigen müssen zum gleichen Thema passen, aber jeweils in genau einem konkreten Detail ' +
         'nicht zur Situation passen (z. B. falscher Ort, falsche Uhrzeit, falscher Preis, falsche Zielgruppe, ' +
-        'fehlende Voraussetzung) - nicht ein komplett anderes Thema. Erkläre am Ende kurz, warum die Lösung ' +
-        'richtig ist und an welchem Detail die anderen beiden jeweils scheitern.',
+        'fehlende Voraussetzung) - nicht ein komplett anderes Thema, und das entscheidende Detail muss mitten im ' +
+        'Fließtext stehen statt in der ersten auffälligen Zeile (siehe Beispiel im System-Prompt). Erkläre am ' +
+        'Ende kurz, warum die Lösung richtig ist und an welchem Detail die anderen beiden jeweils scheitern.',
       responseSchema: TEIL1_SCHEMA,
       zodSchema: GeneratedTeil1Schema,
     })
@@ -168,10 +189,13 @@ export async function generateTask(input: {
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
       timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
+      thinkingLevel: 'MEDIUM',
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-2-Aufgabe: einen kurzen Zeitungsartikel (3-4 Absätze) mit Titel, und genau 4 ' +
-        'Aussagen dazu, von denen jede eindeutig richtig oder falsch ist (nicht alle gleich verteilt).',
+        'Aussagen dazu, von denen jede eindeutig richtig oder falsch ist (nicht alle gleich verteilt). Die ' +
+        'falschen Aussagen sollen nah am Text formuliert sein (z. B. eine Zahl, ein Name oder eine Reihenfolge ' +
+        'leicht verändert) statt einfach das Gegenteil von etwas offensichtlich Unwichtigem zu behaupten.',
       responseSchema: TEIL2_SCHEMA,
       zodSchema: GeneratedTeil2Schema,
     })
@@ -182,13 +206,15 @@ export async function generateTask(input: {
     const result = await geminiJson({
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
-      timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
+      timeoutMs: 90_000, // HIGH-Thinking braucht mehr Zeit als die übliche Generierung
+      thinkingLevel: 'HIGH', // Plausible, nicht-triviale Distraktoren erfinden braucht echtes Abwägen
       system: SYSTEM_PROMPT,
       user:
         'Erstelle eine Teil-3-Aufgabe: einen kurzen Sachtext (2-3 Absätze) und genau 3 mögliche Überschriften. ' +
         'Nur eine Überschrift fasst den Text wirklich korrekt zusammen. Die anderen beiden müssen plausibel zum ' +
         'Thema des Textes klingen, aber einen falschen Fokus, ein falsches Detail oder eine im Text nicht ' +
-        'gezogene Schlussfolgerung enthalten - nicht offensichtlich themenfremd sein.',
+        'gezogene Schlussfolgerung enthalten - nicht offensichtlich themenfremd sein und nicht schon an den ' +
+        'ersten zwei, drei Wörtern erkennbar falsch.',
       responseSchema: TEIL3_SCHEMA,
       zodSchema: GeneratedTeil3Schema,
     })
@@ -199,6 +225,7 @@ export async function generateTask(input: {
     model: MODEL,
     fallbackModel: FALLBACK_MODEL,
     timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
+    thinkingLevel: 'MEDIUM',
     system: SYSTEM_PROMPT,
     user:
       'Erstelle eine Teil-4-Aufgabe: eine Alltagssituation, in der die Testperson (direkt mit "Sie" angesprochen) ' +

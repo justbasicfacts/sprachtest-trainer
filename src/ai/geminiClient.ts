@@ -85,6 +85,11 @@ interface GeminiJsonOpts<T> {
   audio?: { mimeType: string; base64: string }
   responseSchema: GeminiSchema
   zodSchema: z.ZodType<T>
+  /** Wie viel "Denkbudget" Gemini vor der finalen Antwort bekommt. LOW (Standard) reicht
+      für einfache Bewertungs-/Extraktionsaufgaben und ist schnell. Für Aufgaben, die
+      echtes kreatives Abwägen brauchen (z. B. plausible, nicht triviale Distraktoren
+      erfinden), HIGH verwenden - kostet etwas mehr Zeit, aber deutlich bessere Qualität. */
+  thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH'
   /** Abbruch pro Versuch in ms (Standard 30 s) - sonst kann eine hängende
       Verbindung ewig im "pending"-Zustand bleiben und der Retry greift nie. */
   timeoutMs?: number
@@ -165,9 +170,9 @@ async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>):
         responseMimeType: 'application/json',
         responseSchema: opts.responseSchema,
         // Ohne das spendet Gemini 3.x manchmal das gesamte Antwortbudget fürs
-        // "Denken" und liefert nie den finalen JSON-Teil. Minimales Thinking
-        // reicht für diese Aufgaben völlig aus.
-        thinkingConfig: { thinkingLevel: 'LOW' },
+        // "Denken" und liefert nie den finalen JSON-Teil. Für die meisten Aufgaben
+        // reicht minimales Thinking; wer mehr braucht (opts.thinkingLevel), bekommt mehr.
+        thinkingConfig: { thinkingLevel: opts.thinkingLevel ?? 'LOW' },
       },
     }),
   })

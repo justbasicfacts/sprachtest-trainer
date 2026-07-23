@@ -10,6 +10,7 @@ import { TranslateZone } from './useWordTranslate'
 import { WritingScoreView } from './AiScore'
 import { ExamSpeaking, SPEAKING_MAX_POINTS, type SpeakingPartResult } from './ExamSpeaking'
 import { scoreWriting, type WritingScore } from '../ai/scoreWriting'
+import { generateStudyPlan, type StudyPlan } from '../ai/generateStudyPlan'
 import type { Teil4Task } from '../data/types'
 import { openLayer, clearLayers } from '../appHistory'
 import {
@@ -340,6 +341,7 @@ export default function Exam({ setExamActive }: { setExamActive: (active: boolea
           <Btn variant="secondary" onPress={() => { clearLayers(); resetToPick() }}>Neuer Test</Btn>
         </FootActions>
       </AppCard>
+      <StudyPlanCard lesenPts={lesenPts} schreibPts={schreibPts} sprechenDetails={sprechenDetails} />
       {showReview && (
         <>
           <Teil1 d={t.t1} ans={a1} onPick={() => {}} mode="review" />
@@ -362,6 +364,81 @@ function WriteArea({ value, onChange }: { value: string; onChange: (v: string) =
         padding: 14, fontSize: 15, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box',
       }}
     />
+  )
+}
+
+/** Button auf dem Ergebnis-Bildschirm: erstellt aus den Prüfungsergebnissen (und, falls
+    vorhanden, dem Feedback zum mündlichen Teil) einen kurzen persönlichen Lernplan mit
+    2-4 Schwerpunkten und konkreten Übungen. */
+function StudyPlanCard({
+  lesenPts, schreibPts, sprechenDetails,
+}: {
+  lesenPts: number
+  schreibPts: number
+  sprechenDetails: SpeakingPartResult[]
+}) {
+  const [plan, setPlan] = useState<StudyPlan | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const run = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      setPlan(
+        await generateStudyPlan({
+          data: { lesenPts, lesenMax: 9, schreibPts, schreibMax: 6, sprechenDetails },
+        })
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der Lernplan konnte nicht erstellt werden.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <AppCard>
+      {!plan && (
+        <>
+          <CardTitle>📚 Was übe ich als Nächstes?</CardTitle>
+          <Text>
+            Die KI schaut sich dein Ergebnis an und erstellt einen kurzen Lernplan: die wichtigsten Schwerpunkte
+            und konkrete Übungen dafür.
+          </Text>
+          <FootActions>
+            <Btn variant="gold" onPress={run} disabled={loading}>
+              {loading ? 'Lernplan wird erstellt …' : 'Lernplan erstellen 📚'}
+            </Btn>
+          </FootActions>
+          {error && (
+            <Text color="$error600" size="sm" mt="$2">⚠️ {error}</Text>
+          )}
+        </>
+      )}
+
+      {plan && (
+        <>
+          <CardTitle>📚 Dein Lernplan</CardTitle>
+          <Text mb="$2">{plan.summary}</Text>
+          <VStack>
+            {plan.focusAreas.map((f, i) => (
+              <Box key={i} borderTopWidth={i === 0 ? '$0' : '$1'} borderTopColor="$borderLight200" py="$3">
+                <Text fontWeight="$bold" color="$primary700">{f.area}</Text>
+                <Muted mt="$0.5">{f.diagnosis}</Muted>
+                <VStack mt="$1.5">
+                  {f.exercises.map((e, j) => (
+                    <Text key={j} size="sm" pl="$5" mb="$0.5">
+                      ✓ {e}
+                    </Text>
+                  ))}
+                </VStack>
+              </Box>
+            ))}
+          </VStack>
+        </>
+      )}
+    </AppCard>
   )
 }
 

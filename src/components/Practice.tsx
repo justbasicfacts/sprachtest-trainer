@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { DATA } from '../data/content'
 import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task } from '../data/types'
-import { Teil1, Teil2, Teil3, Teil4Prompt, WordCount, SelfAssess } from './Tasks'
+import { Teil1, Teil2, Teil3, Teil4Prompt, SelfAssess } from './Tasks'
 import { db, saveGeneratedTask, type GeneratedTaskRecord } from '../db'
 import { generateTask } from '../ai/generateTask'
 import { summarizePractice } from '../ai/summarizePractice'
@@ -351,20 +351,10 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
   const t4 = d as Teil4Task
   return (
     <Teil4Prompt d={t4}>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Schreiben Sie hier Ihre Nachricht …"
-        style={{
-          width: '100%', minHeight: 240, border: '1.5px solid #DBDBDB', borderRadius: 10,
-          padding: 14, fontSize: 15, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box',
-        }}
-      />
-      <WordCount text={text} />
+      <AiWritingScore d={t4} text={text} onTextChange={setText} />
       <FootActions>
         <Btn onPress={() => setShowCheck(true)}>Selbst prüfen</Btn>
       </FootActions>
-      <AiWritingScore d={t4} text={text} onTextChange={setText} />
       {showCheck && <SelfAssess d={t4} onDone={setSelfScore} />}
       {selfScore !== null && (
         <Text fontWeight="$bold" mt="$2.5">

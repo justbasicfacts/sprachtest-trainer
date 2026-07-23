@@ -1,19 +1,24 @@
 /* KI-Bewertung für Teil-4-Texte: schickt Aufgabe + Text an Gemini und zeigt
    Punkte (max. 6) nach den offiziellen Kriterien, Einzelfeedback und die
-   wichtigsten Sprachkorrekturen. Wird im Übungsmodus und in der
+   wichtigsten Sprachkorrekturen - direkt im Text markiert (durchgestrichen →
+   Korrektur), statt in einer separaten Liste. Wird im Übungsmodus und in der
    Prüfungssimulation verwendet. */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Teil4Task } from '../data/types'
 import { scoreWriting, type WritingScore } from '../ai/scoreWriting'
+import { WordCount } from './Tasks'
 import { Box, HStack, VStack, Text, Btn, Muted } from './ui/kit'
+
+type Correction = { wrong: string; better: string }
 
 export function AiWritingScore({
   d, text, onTextChange,
 }: {
   d: Teil4Task
   text: string
-  /** Wenn gesetzt, bekommen die Korrekturen einen "Übernehmen"-Button, der die
-      fehlerhafte Stelle direkt im Eingabefeld durch die korrigierte Version ersetzt. */
+  /** Wenn gesetzt, wird das Eingabefeld hier mitgerendert (statt eines separaten
+      <textarea> beim Aufrufer) - so können Korrekturen direkt im Text angezeigt
+      und per Klick übernommen werden. */
   onTextChange?: (next: string) => void
 }) {
   const [loading, setLoading] = useState(false)
@@ -37,7 +42,12 @@ export function AiWritingScore({
 
   return (
     <Box mt="$3">
-      <HStack gap="$2.5" alignItems="center" flexWrap="wrap">
+      {onTextChange && (
+        <WritingInputBox value={text} onChange={onTextChange} corrections={result?.corrections ?? []} resultKey={result} />
+      )}
+      <WordCount text={text} />
+
+      <HStack gap="$2.5" alignItems="center" flexWrap="wrap" mt="$3">
         <Btn variant="secondary" onPress={run} disabled={loading || tooShort}>
           {loading ? 'KI bewertet …' : '🤖 Text von KI bewerten lassen'}
         </Btn>
@@ -50,15 +60,9 @@ export function AiWritingScore({
         </Text>
       )}
 
-      {result && (
-        <WritingScoreView
-          d={d}
-          result={result}
-          onApplyCorrection={
-            onTextChange ? (wrong, better) => onTextChange(applyCorrection(text, wrong, better)) : undefined
-          }
-        />
-      )}
+      {/* Korrekturen sind (wenn onTextChange gesetzt ist) schon oben im Text markiert -
+          hier also nicht nochmal als Liste anzeigen. */}
+      {result && <WritingScoreView d={d} result={result} hideCorrections={!!onTextChange} />}
     </Box>
   )
 }
@@ -72,14 +76,127 @@ function applyCorrection(text: string, wrong: string, better: string): string {
   return text.slice(0, idx) + better + text.slice(idx + wrong.length)
 }
 
+type Segment = { type: 'text'; value: string } | { type: 'correction'; wrong: string; better: string }
+
+/** Zerlegt den Text in Abschnitte, wobei jede (noch im Text vorhandene) Korrektur ein
+    eigenes Segment wird - so kann sie an ihrer echten Stelle im Fließtext markiert
+    werden, statt in einer separaten Liste. Überlappende Treffer werden ignoriert. */
+function buildAnnotatedSegments(text: string, corrections: Correction[]): Segment[] {
+  const matches = corrections
+    .filter((c) => c.wrong.length > 0)
+    .map((c) => ({ ...c, idx: text.indexOf(c.wrong) }))
+    .filter((c) => c.idx !== -1)
+    .sort((a, b) => a.idx - b.idx)
+
+  const segments: Segment[] = []
+  let cursor = 0
+  for (const m of matches) {
+    if (m.idx < cursor) continue // überlappt mit einer schon platzierten Korrektur
+    if (m.idx > cursor) segments.push({ type: 'text', value: text.slice(cursor, m.idx) })
+    segments.push({ type: 'correction', wrong: m.wrong, better: m.better })
+    cursor = m.idx + m.wrong.length
+  }
+  if (cursor < text.length) segments.push({ type: 'text', value: text.slice(cursor) })
+  return segments
+}
+
+const TEXTAREA_STYLE = {
+  width: '100%', minHeight: 240, border: '1.5px solid #DBDBDB', borderRadius: 10,
+  padding: 14, fontSize: 15, fontFamily: 'inherit', resize: 'vertical' as const, boxSizing: 'border-box' as const,
+}
+
+/** Die Schreib-Eingabe für Teil 4: normalerweise ein simples <textarea>. Sobald eine
+    KI-Bewertung mit Korrekturen da ist, wechselt sie automatisch in eine Lese-Ansicht,
+    die genau gleich aussieht (gleicher Rahmen/Abstand), aber die fehlerhaften Stellen
+    direkt im Text durchgestrichen zeigt - mit der Korrektur direkt daneben, anklickbar. */
+function WritingInputBox({
+  value, onChange, corrections, resultKey,
+}: {
+  value: string
+  onChange: (next: string) => void
+  corrections: Correction[]
+  /** Ändert sich (neue Objekt-Referenz) bei jeder neuen KI-Bewertung - löst den
+      automatischen Wechsel in die Korrektur-Ansicht aus. */
+  resultKey: unknown
+}) {
+  const [editing, setEditing] = useState(true)
+  const openCorrections = corrections.filter((c) => value.includes(c.wrong))
+
+  // Nach einer neuen KI-Bewertung mit offenen Korrekturen automatisch die Ansicht
+  // zeigen, in der die Fehler direkt im Text markiert sind.
+  useEffect(() => {
+    if (resultKey && corrections.length > 0) setEditing(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultKey])
+
+  // Sobald keine offenen Korrekturen mehr da sind (alle übernommen oder Text
+  // inzwischen selbst angepasst), automatisch zurück zum normalen Schreibfeld.
+  useEffect(() => {
+    if (!editing && openCorrections.length === 0) setEditing(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openCorrections.length])
+
+  if (editing) {
+    return (
+      <Box>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Schreiben Sie hier Ihre Nachricht …"
+          style={TEXTAREA_STYLE}
+        />
+        {openCorrections.length > 0 && (
+          <Text
+            size="sm" color="$primary600" fontWeight="$semibold" mt="$1.5"
+            onPress={() => setEditing(false)}
+          >
+            ✏️ {openCorrections.length} {openCorrections.length === 1 ? 'Korrektur' : 'Korrekturen'} im Text ansehen
+          </Text>
+        )}
+      </Box>
+    )
+  }
+
+  const segments = buildAnnotatedSegments(value, corrections)
+  return (
+    <Box>
+      <Box
+        borderWidth="$1.5" borderColor="$borderLight200" borderRadius="$lg" p="$3.5"
+        sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, minHeight: 240, fontSize: 15, boxSizing: 'border-box' }}
+      >
+        {segments.map((s, i) =>
+          s.type === 'text' ? (
+            <span key={i}>{s.value}</span>
+          ) : (
+            <span key={i}>
+              <Text color="$error600" sx={{ textDecorationLine: 'line-through' }}>{s.wrong}</Text>
+              {' '}
+              <Text
+                color="$success700" fontWeight="$bold"
+                onPress={() => onChange(applyCorrection(value, s.wrong, s.better))}
+              >
+                {s.better} ✓
+              </Text>
+              {' '}
+            </span>
+          )
+        )}
+      </Box>
+      <Text size="sm" color="$primary600" fontWeight="$semibold" mt="$1.5" onPress={() => setEditing(true)}>
+        ✏️ Weiter bearbeiten
+      </Text>
+    </Box>
+  )
+}
+
 /** Anzeige einer KI-Schreibbewertung (auch vom Prüfungsmodus wiederverwendet). */
 export function WritingScoreView({
-  d, result, onApplyCorrection,
+  d, result, hideCorrections,
 }: {
   d: Teil4Task
   result: WritingScore
-  /** Optional: macht die Korrekturen per Klick auf den aktuellen Text anwendbar. */
-  onApplyCorrection?: (wrong: string, better: string) => void
+  /** true, wenn die Korrekturen schon anderswo (direkt im Text) gezeigt werden. */
+  hideCorrections?: boolean
 }) {
   return (
     <Box borderWidth="$1" borderColor="$borderLight200" borderRadius="$xl" p="$4" mt="$3">
@@ -100,8 +217,21 @@ export function WritingScoreView({
         <CriterionRow ok={result.clarity.ok} label="Verständlich & verbundene Sätze" comment={result.clarity.comment} />
       </VStack>
 
-      {result.corrections.length > 0 && (
-        <Corrections corrections={result.corrections} onApply={onApplyCorrection} />
+      {!hideCorrections && result.corrections.length > 0 && (
+        <Box mt="$3">
+          <Text fontWeight="$bold" size="sm" mb="$1">
+            ✏️ Sprachliche Korrekturen
+          </Text>
+          <VStack gap="$1">
+            {result.corrections.map((c, i) => (
+              <Text key={i} size="sm">
+                <Text color="$error600" sx={{ textDecorationLine: 'line-through' }}>{c.wrong}</Text>
+                {' → '}
+                <Text color="$success700" fontWeight="$semibold">{c.better}</Text>
+              </Text>
+            ))}
+          </VStack>
+        </Box>
       )}
 
       <Box bg="$primary50" borderRadius="$md" p="$3" mt="$3">
@@ -110,66 +240,6 @@ export function WritingScoreView({
       <Muted mt="$2">
         Die KI-Bewertung ist eine Orientierung - in der echten Prüfung bewerten menschliche Prüfer.
       </Muted>
-    </Box>
-  )
-}
-
-/** Liste der Sprachkorrekturen mit "Übernehmen"-Button pro Zeile (wenn onApply gesetzt
-    ist) und einer Sammel-Aktion, um alle noch offenen Korrekturen auf einmal anzuwenden. */
-function Corrections({
-  corrections, onApply,
-}: {
-  corrections: { wrong: string; better: string }[]
-  onApply?: (wrong: string, better: string) => void
-}) {
-  const [applied, setApplied] = useState<Set<number>>(new Set())
-
-  const apply = (i: number, wrong: string, better: string) => {
-    onApply?.(wrong, better)
-    setApplied((prev) => new Set(prev).add(i))
-  }
-
-  const openCount = corrections.length - applied.size
-
-  return (
-    <Box mt="$3">
-      <HStack alignItems="center" justifyContent="space-between" flexWrap="wrap" gap="$2">
-        <Text fontWeight="$bold" size="sm">
-          ✏️ Sprachliche Korrekturen
-        </Text>
-        {onApply && openCount > 1 && (
-          <Btn
-            small
-            variant="secondary"
-            onPress={() => corrections.forEach((c, i) => { if (!applied.has(i)) apply(i, c.wrong, c.better) })}
-          >
-            Alle übernehmen
-          </Btn>
-        )}
-      </HStack>
-      <VStack gap="$1.5" mt="$1.5">
-        {corrections.map((c, i) => {
-          const done = applied.has(i)
-          return (
-            <HStack key={i} alignItems="center" justifyContent="space-between" gap="$2" flexWrap="wrap">
-              <Text size="sm" flex={1} sx={{ minWidth: 180 }}>
-                <Text color="$error600" sx={{ textDecorationLine: 'line-through' }}>{c.wrong}</Text>
-                {' → '}
-                <Text color="$success700" fontWeight="$semibold">{c.better}</Text>
-              </Text>
-              {onApply && (
-                done ? (
-                  <Text size="sm" color="$success700" fontWeight="$semibold">✓ Übernommen</Text>
-                ) : (
-                  <Btn small variant="secondary" onPress={() => apply(i, c.wrong, c.better)}>
-                    Übernehmen
-                  </Btn>
-                )
-              )}
-            </HStack>
-          )
-        })}
-      </VStack>
     </Box>
   )
 }

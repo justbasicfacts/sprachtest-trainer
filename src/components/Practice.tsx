@@ -364,7 +364,7 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
       <FootActions>
         <Btn onPress={() => setShowCheck(true)}>Selbst prüfen</Btn>
       </FootActions>
-      <AiWritingScore d={t4} text={text} />
+      <AiWritingScore d={t4} text={text} onTextChange={setText} />
       {showCheck && <SelfAssess d={t4} onDone={setSelfScore} />}
       {selfScore !== null && (
         <Text fontWeight="$bold" mt="$2.5">

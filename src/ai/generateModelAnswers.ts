@@ -19,7 +19,7 @@ const TEIL4_MODEL_SCHEMA: GeminiSchema = {
   properties: {
     model: {
       type: 'STRING',
-      description: 'Vollständige alternative Nachricht mit Anrede und Gruß, \\n zwischen Absätzen. Ca. 80-120 Wörter.',
+      description: 'Vollständige alternative Nachricht mit Anrede und Gruß, mit einem echten Zeilenumbruch zwischen den Absätzen. Ca. 80-120 Wörter.',
     },
   },
   required: ['model'],

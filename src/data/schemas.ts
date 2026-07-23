@@ -26,12 +26,12 @@ export const Teil2ItemSchema = z.object({
 
 export const GeneratedTeil2Schema = z.object({
   title: z.string().meta({ description: 'Überschrift des Zeitungsartikels' }),
-  text: z.string().meta({ description: 'Zeitungsartikel auf B1-Niveau, 3-4 Absätze, getrennt durch \\n' }),
+  text: z.string().meta({ description: 'Zeitungsartikel auf B1-Niveau, 3-4 Absätze, jeweils durch einen echten Zeilenumbruch getrennt' }),
   items: z.array(Teil2ItemSchema).length(4).meta({ description: 'Genau 4 Aussagen zum Text' }),
 })
 
 export const GeneratedTeil3Schema = z.object({
-  text: z.string().meta({ description: 'Zeitungsartikel auf B1-Niveau, 2-3 Absätze, getrennt durch \\n' }),
+  text: z.string().meta({ description: 'Zeitungsartikel auf B1-Niveau, 2-3 Absätze, jeweils durch einen echten Zeilenumbruch getrennt' }),
   options: z.array(z.string()).length(3).meta({ description: 'Genau 3 mögliche Überschriften zum gleichen Thema; nur eine fasst den Text korrekt zusammen, die anderen haben falschen Fokus/Detail' }),
   correct: z.number().int().min(0).max(2).meta({ description: 'Index (0-2) der passenden Überschrift' }),
   expl: z.string().meta({ description: 'Kurze Erklärung, warum diese Überschrift passt' }),
@@ -40,7 +40,7 @@ export const GeneratedTeil3Schema = z.object({
 export const GeneratedTeil4Schema = z.object({
   situation: z.string().meta({ description: 'Alltagssituation, in der eine kurze Nachricht geschrieben werden muss, direkt mit "Sie" formuliert (kein erfundener Name für die Testperson)' }),
   points: z.array(z.string()).length(4).meta({ description: 'Genau 4 Punkte, die in der Nachricht behandelt werden sollen' }),
-  model: z.string().meta({ description: 'Musterlösung: vollständige Nachricht mit Anrede und Gruß, \\n zwischen Absätzen' }),
+  model: z.string().meta({ description: 'Musterlösung: vollständige Nachricht mit Anrede und Gruß, mit einem echten Zeilenumbruch zwischen den Absätzen' }),
 })
 
 export type GeneratedTeil1 = z.infer<typeof GeneratedTeil1Schema>

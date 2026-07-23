@@ -83,7 +83,7 @@ const TEIL2_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
   properties: {
     title: { type: 'STRING', description: 'Überschrift des Zeitungsartikels' },
-    text: { type: 'STRING', description: 'Zeitungsartikel auf B1-Niveau, 3-4 Absätze, getrennt durch \\n' },
+    text: { type: 'STRING', description: 'Zeitungsartikel auf B1-Niveau, 3-4 Absätze, jeweils durch einen echten Zeilenumbruch getrennt' },
     items: {
       type: 'ARRAY',
       minItems: 4,
@@ -106,7 +106,7 @@ const TEIL2_SCHEMA: GeminiSchema = {
 const TEIL3_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
   properties: {
-    text: { type: 'STRING', description: 'Zeitungsartikel auf B1-Niveau, 2-3 Absätze, getrennt durch \\n' },
+    text: { type: 'STRING', description: 'Zeitungsartikel auf B1-Niveau, 2-3 Absätze, jeweils durch einen echten Zeilenumbruch getrennt' },
     options: {
       type: 'ARRAY',
       items: { type: 'STRING' },
@@ -132,7 +132,7 @@ const TEIL4_SCHEMA: GeminiSchema = {
         'Nachricht an Ihre Kollegin.") - NIE mit erfundenem Namen für die Testperson selbst',
     },
     points: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 4, maxItems: 4, description: 'Genau 4 Punkte, die in der Nachricht behandelt werden sollen' },
-    model: { type: 'STRING', description: 'Musterlösung: vollständige Nachricht mit Anrede und Gruß, \\n zwischen Absätzen' },
+    model: { type: 'STRING', description: 'Musterlösung: vollständige Nachricht mit Anrede und Gruß, mit einem echten Zeilenumbruch zwischen den Absätzen' },
   },
   required: ['situation', 'points', 'model'],
 }

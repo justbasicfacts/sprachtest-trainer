@@ -38,6 +38,26 @@ function isTransient(error: unknown): boolean {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/** Manche Modelle "escapen" Zeilenumbrüche in JSON-String-Werten doppelt, wenn ihr
+    Prompt/Schema wörtlich "\n" erwähnt: statt eines echten Zeilenumbruchs liefern sie
+    dann das literale Zeichenpaar Backslash+n, das nach dem JSON.parse als sichtbares
+    "\n" im Text auftaucht statt als Zeilenumbruch. Das räumt das rekursiv in allen
+    Strings des geparsten Objekts auf, bevor zod validiert. */
+function fixDoubleEscapedNewlines<T>(value: T): T {
+  if (typeof value === 'string') {
+    return value.replace(/\\n/g, '\n') as unknown as T
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => fixDoubleEscapedNewlines(v)) as unknown as T
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, fixDoubleEscapedNewlines(v)])
+    ) as T
+  }
+  return value
+}
+
 /** Kombiniert mehrere AbortSignals zu einem (ohne auf AbortSignal.any angewiesen zu
     sein, das nicht in jedem Zielbrowser verfügbar ist). */
 function combineSignals(signals: AbortSignal[]): AbortSignal {
@@ -169,5 +189,5 @@ async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>):
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('')
   if (!text) throw new Error('Gemini hat keine Antwort geliefert.')
 
-  return opts.zodSchema.parse(JSON.parse(text))
+  return opts.zodSchema.parse(fixDoubleEscapedNewlines(JSON.parse(text)))
 }

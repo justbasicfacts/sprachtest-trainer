@@ -12,8 +12,8 @@ export const AdSchema = z.object({
 })
 
 export const GeneratedTeil1Schema = z.object({
-  situation: z.string().meta({ description: 'Kurze Alltagssituation auf Deutsch (B1-Niveau), 1-2 Sätze' }),
-  ads: z.array(AdSchema).length(3).meta({ description: 'Genau 3 Kleinanzeigen, nur eine passt zur Situation' }),
+  situation: z.string().meta({ description: 'Kurze Alltagssituation auf Deutsch (B1-Niveau), 1-2 Sätze, direkt mit "Sie" formuliert' }),
+  ads: z.array(AdSchema).length(3).meta({ description: 'Genau 3 Kleinanzeigen zum gleichen Thema; nur eine erfüllt alle Details, die anderen scheitern an einem konkreten Detail' }),
   correct: z.number().int().min(0).max(2).meta({ description: 'Index (0-2) der richtigen Anzeige' }),
   expl: z.string().meta({ description: 'Kurze Erklärung auf Deutsch, warum die Lösung richtig ist und die anderen nicht' }),
 })
@@ -32,13 +32,13 @@ export const GeneratedTeil2Schema = z.object({
 
 export const GeneratedTeil3Schema = z.object({
   text: z.string().meta({ description: 'Zeitungsartikel auf B1-Niveau, 2-3 Absätze, getrennt durch \\n' }),
-  options: z.array(z.string()).length(3).meta({ description: 'Genau 3 mögliche Überschriften, nur eine passt' }),
+  options: z.array(z.string()).length(3).meta({ description: 'Genau 3 mögliche Überschriften zum gleichen Thema; nur eine fasst den Text korrekt zusammen, die anderen haben falschen Fokus/Detail' }),
   correct: z.number().int().min(0).max(2).meta({ description: 'Index (0-2) der passenden Überschrift' }),
   expl: z.string().meta({ description: 'Kurze Erklärung, warum diese Überschrift passt' }),
 })
 
 export const GeneratedTeil4Schema = z.object({
-  situation: z.string().meta({ description: 'Alltagssituation, in der eine kurze Nachricht geschrieben werden muss' }),
+  situation: z.string().meta({ description: 'Alltagssituation, in der eine kurze Nachricht geschrieben werden muss, direkt mit "Sie" formuliert (kein erfundener Name für die Testperson)' }),
   points: z.array(z.string()).length(4).meta({ description: 'Genau 4 Punkte, die in der Nachricht behandelt werden sollen' }),
   model: z.string().meta({ description: 'Musterlösung: vollständige Nachricht mit Anrede und Gruß, \\n zwischen Absätzen' }),
 })

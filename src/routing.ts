@@ -7,9 +7,9 @@
    den Hash nicht. Der Tab-Wechsel hier nutzt replaceState, erzeugt also keinen
    eigenen History-Eintrag und kollidiert nicht mit der Layer-Ebenen-Navigation. */
 
-export type TabId = 'home' | 'practice' | 'exam' | 'speak' | 'vocab'
+export type TabId = 'home' | 'practice' | 'exam' | 'speak' | 'training' | 'vocab'
 
-const VALID_TABS: readonly TabId[] = ['home', 'practice', 'exam', 'speak', 'vocab']
+const VALID_TABS: readonly TabId[] = ['home', 'practice', 'exam', 'speak', 'training', 'vocab']
 
 function isTabId(v: string): v is TabId {
   return (VALID_TABS as readonly string[]).includes(v)

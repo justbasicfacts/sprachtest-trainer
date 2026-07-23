@@ -7,6 +7,7 @@ import { db, seedVocab, type ExamResult } from './db'
 import Practice from './components/Practice'
 import Exam from './components/Exam'
 import Speak from './components/Speak'
+import Training from './components/Training'
 import Vocab from './components/Vocab'
 import {
   Box, HStack, VStack, Text, Heading, Pressable, useBreakpointValue,
@@ -18,6 +19,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'practice', label: 'Üben', icon: '🎯' },
   { id: 'exam', label: 'Prüfung', icon: '⏱️' },
   { id: 'speak', label: 'Sprechen', icon: '🗣️' },
+  { id: 'training', label: 'Training', icon: '🛠️' },
   { id: 'vocab', label: 'Vokabeln', icon: '📚' },
 ]
 
@@ -76,7 +78,7 @@ export default function App() {
               Berliner Sprachtest für die Einbürgerung
             </Heading>
             <Text size="2xs" color="$white" sx={{ opacity: 0.75 }}>
-              B1-Trainer · Lesen · Schreiben · Sprechen · Vokabeln
+              B1-Trainer · Lesen · Schreiben · Sprechen · Training · Vokabeln
             </Text>
           </VStack>
         </HStack>
@@ -96,6 +98,7 @@ export default function App() {
             {view === 'practice' && <Practice />}
             {view === 'exam' && <Exam setExamActive={setExamActive} />}
             {view === 'speak' && <Speak />}
+            {view === 'training' && <Training />}
             {view === 'vocab' && <Vocab />}
           </motion.div>
         </Page>
@@ -199,6 +202,7 @@ function Home({ go }: { go: (v: TabId) => void }) {
     { id: 'practice', icon: '🎯', title: 'Üben', sub: 'Alle Aufgaben ohne Zeitdruck, mit sofortigem Feedback und Erklärungen.' },
     { id: 'exam', icon: '⏱️', title: 'Prüfungssimulation', sub: 'Kompletter schriftlicher Test mit echter Zeit: 30 Min. Lesen + 20 Min. Schreiben.' },
     { id: 'speak', icon: '🗣️', title: 'Sprechen', sub: 'Kennenlernen-Fragen, Fotobeschreibung mit Originalfotos und Situationen mit Pro & Contra.' },
+    { id: 'training', icon: '🛠️', title: 'Gezieltes Training', sub: 'Einzelne Fähigkeiten gezielt üben - z. B. aus deinem Lernplan nach einer Prüfungssimulation.' },
     {
       id: 'vocab', icon: '📚', title: 'Vokabeln',
       sub: dueCount != null && dueCount > 0 ? <Text fontWeight="$bold">{dueCount} Wörter fällig – jetzt wiederholen!</Text> : 'B1-Wortschatz mit Spaced Repetition.',

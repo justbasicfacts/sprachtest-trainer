@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import { VOCAB_SEED } from './data/vocab'
-import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task } from './data/types'
+import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task, TrainingExercise } from './data/types'
 
 export interface VocabWord {
   id?: number
@@ -38,10 +38,20 @@ export interface GeneratedTaskRecord {
   createdAt: number
 }
 
+/** Von der KI generierte Trainings-Übung zu einer Fähigkeit (gezieltes Training),
+    lokal gespeichert, damit sie den Reload übersteht. */
+export interface GeneratedTrainingRecord {
+  id: string
+  skillId: string
+  exercise: TrainingExercise
+  createdAt: number
+}
+
 class AppDatabase extends Dexie {
   vocab!: Table<VocabWord, number>
   results!: Table<ExamResult, number>
   generated!: Table<GeneratedTaskRecord, string>
+  trainingGenerated!: Table<GeneratedTrainingRecord, string>
 
   constructor() {
     super('sprachtest-trainer')
@@ -54,6 +64,12 @@ class AppDatabase extends Dexie {
       results: '++id, date',
       generated: 'id, part, createdAt',
     })
+    this.version(3).stores({
+      vocab: '++id, de, due, tag, custom',
+      results: '++id, date',
+      generated: 'id, part, createdAt',
+      trainingGenerated: 'id, skillId, createdAt',
+    })
   }
 }
 
@@ -65,6 +81,11 @@ export async function saveGeneratedTask(
   task: Teil1Task | Teil2Task | Teil3Task | Teil4Task
 ): Promise<void> {
   await db.generated.add({ id: task.id, part, task, createdAt: Date.now() })
+}
+
+/** Speichert eine von der KI generierte Trainings-Übung lokal, damit sie den Reload übersteht */
+export async function saveGeneratedTrainingExercise(skillId: string, exercise: TrainingExercise): Promise<void> {
+  await db.trainingGenerated.add({ id: exercise.id, skillId, exercise, createdAt: Date.now() })
 }
 
 /** Seed the vocab table on first run (guarded against double-invocation, e.g. React StrictMode) */

@@ -436,6 +436,15 @@ function StudyPlanCard({
               </Box>
             ))}
           </VStack>
+          <FootActions>
+            <Btn variant="gold" onPress={() => { window.location.hash = '#/training' }}>
+              🛠️ Jetzt gezielt üben
+            </Btn>
+          </FootActions>
+          <Muted mt="$1.5">
+            Im Trainingsbereich findest du passende Übungen zu Bildbeschreibung, Vor-/Nachteile abwägen,
+            Präpositionen, Nebensätzen und Konnektoren.
+          </Muted>
         </>
       )}
     </AppCard>

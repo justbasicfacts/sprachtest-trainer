@@ -83,3 +83,35 @@ export interface ExamData {
 }
 
 export type ExtraData = Pick<ExamData, 'teil1' | 'teil2' | 'teil3' | 'teil4' | 'teil5' | 'teil6' | 'teil7'>
+
+/* ---------- Gezieltes Training (Lernpfad): Übungen zu einzelnen Fähigkeiten,
+   unabhängig vom Prüfungsformat - z. B. weil eine KI-Auswertung genau das als
+   Schwäche genannt hat (Bildbeschreibung, Vor-/Nachteile, Präpositionen, ...). ---------- */
+
+/** 'speak' → per Mikrofon über SpeakPractice, 'write' → Text + KI-Korrektur. */
+export type TrainingMode = 'speak' | 'write'
+
+export interface TrainingExercise {
+  id: string
+  /** Was zu tun ist, z. B. "Beschreibe das Foto in ganzen Sätzen." */
+  instruction: string
+  /** Die konkrete Aufgabe/Situation/der Lückensatz */
+  prompt: string
+  /** Formulierungshilfe, z. B. ein Satzanfang oder die gesuchte Struktur */
+  hint?: string
+  /** Musterlösung zum Vergleich */
+  sampleAnswer: string
+}
+
+export interface TrainingSkill {
+  id: string
+  icon: string
+  title: string
+  /** Kurze Beschreibung, welches Problem dieses Training behebt */
+  focus: string
+  mode: TrainingMode
+  /** Worauf bei dieser Fähigkeit geachtet werden soll (Sprechen: Bewertungskriterien
+      für die KI; Schreiben: Hinweise, die als Checkliste angezeigt werden) */
+  criteria: string[]
+  exercises: TrainingExercise[]
+}

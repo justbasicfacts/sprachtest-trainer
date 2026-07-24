@@ -163,8 +163,22 @@ function buildSpeakContext(skill: TrainingSkill, exercise: TrainingExercise): st
   )
 }
 
+/** Vergleicht zwei Sätze robust gegen Groß-/Kleinschreibung, Anführungszeichen,
+    doppelte Leerzeichen und schließende Satzzeichen - für den schnellen lokalen
+    Abgleich, bevor überhaupt die KI gefragt wird. */
+function normalizeAnswer(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[„"“”‘’]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[.!?]+$/, '')
+}
+
 /** Schreib-Übung mit KI-Korrektur (für die 'write'-Fähigkeiten: Präpositionen,
-    Nebensätze, Konnektoren, ...). Zeigt Feedback + eine verbesserte Version. */
+    Nebensätze, Konnektoren, ...). Gleicht die Antwort zuerst lokal mit der
+    Musterlösung ab (spart einen KI-Aufruf bei einem klaren Treffer) und fragt nur
+    bei allem anderen die KI, ob die Antwort trotzdem richtig ist. */
 function WritingDrill({ exercise, criteria }: { exercise: TrainingExercise; criteria: string[] }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -172,8 +186,16 @@ function WritingDrill({ exercise, criteria }: { exercise: TrainingExercise; crit
   const [error, setError] = useState<string | null>(null)
 
   const run = async () => {
-    setLoading(true)
     setError(null)
+
+    // Schneller lokaler Abgleich: entspricht die Antwort (bis auf Kleinigkeiten wie
+    // Anführungszeichen/Satzzeichen) der Musterlösung, brauchen wir die KI gar nicht.
+    if (normalizeAnswer(text) === normalizeAnswer(exercise.sampleAnswer)) {
+      setResult({ ok: true, feedback: 'Genau richtig - das entspricht der Musterlösung!', corrected: text })
+      return
+    }
+
+    setLoading(true)
     try {
       setResult(
         await checkTrainingAnswer({

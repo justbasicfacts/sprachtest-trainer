@@ -15,15 +15,27 @@ const ExerciseSchema = z.object({
 const SYSTEM_PROMPT = `Du erstellst Übungen für Deutschlerner auf B1-Niveau, die sich auf den Berliner
 Sprachtest für die Einbürgerung vorbereiten. Jede Übung trainiert gezielt EINE bestimmte Fähigkeit (z. B.
 eine Grammatikstruktur oder eine Sprech-Technik) - nicht das ganze Prüfungsformat. Erfinde jedes Mal ein neues,
-konkretes Beispiel; wiederhole nicht die exakten Sätze aus schon vorhandenen Übungen. Antworte ausschließlich
-auf Deutsch und exakt im vorgegebenen JSON-Schema.`
+konkretes Beispiel; wiederhole nicht die exakten Sätze aus schon vorhandenen Übungen.
+
+WICHTIG für "hint": Das ist eine Formulierungshilfe, KEINE Lösung. Verrate dort niemals den fertigen,
+korrekten Satz (auch nicht in Anführungszeichen) - das würde die Übung sinnlos machen, weil der Lernende die
+Lösung nur noch abschreiben müsste. Gib statt eines fertigen Satzes nur das Muster/Gerüst mit Lücken oder eine
+Regel an, z. B. "Struktur: „Weil …, …“ - im weil-Satz steht das Verb ganz am Ende." oder "mit + Dativ". Die
+vollständige, korrekte Lösung gehört ausschließlich in "sampleAnswer".
+
+Antworte ausschließlich auf Deutsch und exakt im vorgegebenen JSON-Schema.`
 
 const RESPONSE_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
   properties: {
     instruction: { type: 'STRING', description: 'Kurze Anweisung, was zu tun ist (1 Satz)' },
     prompt: { type: 'STRING', description: 'Die konkrete Aufgabe: Situation, Lückensatz oder zwei zu verbindende Sätze' },
-    hint: { type: 'STRING', description: 'Formulierungshilfe: Satzanfang oder die gesuchte Struktur als Beispiel' },
+    hint: {
+      type: 'STRING',
+      description:
+        'Formulierungshilfe als Muster/Regel MIT LÜCKEN (z. B. "Struktur: „Weil …, …“ - Verb am Ende" oder ' +
+        '"mit + Dativ") - NIEMALS der fertige, vollständige Lösungssatz',
+    },
     sampleAnswer: { type: 'STRING', description: 'Eine vollständige, korrekte Musterlösung' },
   },
   required: ['instruction', 'prompt', 'sampleAnswer'],

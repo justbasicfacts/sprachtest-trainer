@@ -260,44 +260,55 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Google Website Translator: eigenes Auswahlfeld in die Kopfzeile einpassen und
-   das eingeblendete Google-Banner unterdrücken, das sonst die ganze Seite nach
-   unten schiebt (und die sticky-Kopfzeile verrutschen lässt).
+   Google Website Translator: das Auswahlfeld in die Kopfzeile einpassen und das
+   Banner unterdrücken, das Google sonst über die Seite legt und den ganzen Body
+   nach unten schiebt (wodurch die sticky-Kopfzeile verrutscht).
+
+   ACHTUNG - hier lauert eine Falle: Google gibt MEHREREN eigenen iframes die
+   Klasse "skiptranslate" - dem Banner UND dem Sprachmenü. Ein pauschales
+   `.skiptranslate iframe { display: none }` blendet deshalb auch die
+   Sprachauswahl aus: Der Umschalter ist dann sichtbar, öffnet aber nichts.
+   Deswegen wird hier ausschließlich das Banner adressiert.
    --------------------------------------------------------------------------- */
 
 .lang-select {
   flex: 0 0 auto;
 }
 
-/* Auswahlfeld an die dunkle Kopfzeile anpassen */
+/* "Powered by Google Translate" ausblenden - das <select> selbst bekommt seine
+   Schriftgröße unten wieder zurück. */
 .lang-select .goog-te-gadget {
-  font-size: 0 !important; /* blendet den "Powered by"-Text aus, das select bleibt */
+  font-size: 0 !important;
   line-height: 1;
   color: transparent;
 }
-.lang-select .goog-te-gadget .goog-te-combo {
+
+/* Das eigentliche Auswahlfeld an die dunkle Kopfzeile anpassen */
+.lang-select .goog-te-combo {
   margin: 0 !important;
   padding: 5px 8px;
   font-size: 13px;
   font-family: inherit;
-  color: #1D4E89;
+  color: #1d4e89;
   background: #fff;
   border: 1.5px solid rgba(255, 255, 255, 0.6);
   border-radius: 8px;
-  max-width: 130px;
+  max-width: 150px;
 }
 
-/* Banner-Frame und der von Google erzwungene Body-Versatz */
-.skiptranslate iframe,
-iframe.skiptranslate {
+/* NUR das Banner ausblenden - nicht jedes skiptranslate-iframe. */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame {
   display: none !important;
 }
+
+/* Googles Banner setzt body{top:40px} - das hier stellt den Versatz zurueck. */
 body {
   top: 0 !important;
   position: static !important;
 }
 
-/* Google hebt übersetzte Textstellen sonst farbig hervor - das stört hier nur */
+/* Uebersetzte Stellen hebt Google sonst farbig hervor - stoert hier nur */
 font[style*="vertical-align"] {
   vertical-align: inherit !important;
   background: none !important;

@@ -31,7 +31,7 @@ declare global {
       translate?: {
         TranslateElement: {
           new (opts: Record<string, unknown>, containerId: string): unknown
-          InlineLayout: { SIMPLE: unknown }
+          InlineLayout: { SIMPLE: unknown; HORIZONTAL: unknown; VERTICAL: unknown }
         }
       }
     }
@@ -61,7 +61,14 @@ export function LanguageSelector() {
         {
           pageLanguage: 'de',
           includedLanguages: LANGUAGES,
-          layout: ctor.InlineLayout.SIMPLE,
+          // HORIZONTAL rendert ein echtes <select> (.goog-te-combo).
+          // NICHT SIMPLE verwenden: Das ist der "Select Language"-Knopf, dessen
+          // Menü in einem eigenen iframe mit der Klasse "skiptranslate" steckt -
+          // dasselbe Kennzeichen trägt das Google-Banner. Wer das Banner per CSS
+          // ausblendet, blendet damit auch das Sprachmenü aus und bekommt einen
+          // Knopf, der sich nicht öffnen lässt. Ein natives <select> hat das
+          // Problem nicht und ist auf dem Handy ohnehin besser bedienbar.
+          layout: ctor.InlineLayout.HORIZONTAL,
           autoDisplay: false,
         },
         CONTAINER_ID

@@ -12,7 +12,7 @@ import { useCountdown } from '../../hooks/useCountdown'
 import { useVoiceCapture } from '../useVoiceCapture'
 import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { logDrill, updateDrill } from '../../db'
-import { Box, HStack, VStack, Text, Muted, Btn, ProgressBar, TimerDisplay } from '../ui/kit'
+import { Box, HStack, VStack, Text, Muted, Btn, ProgressBar, TimerDisplay, NoTranslate} from '../ui/kit'
 
 /** So viele Fragen umfasst eine Runde - aus dem Fragenpool zufällig gezogen. */
 const ROUND_SIZE = 5
@@ -190,7 +190,7 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
 
         <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$lg" p="$4" my="$3">
           <Text fontSize={19} fontWeight="$bold">
-            {questions[idx]}
+            <NoTranslate>{questions[idx]}</NoTranslate>
           </Text>
         </Box>
 
@@ -233,7 +233,7 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
         {questions.map((q, i) => (
           <Box key={i} borderWidth="$1" borderColor="$borderLight200" borderRadius="$lg" p="$3">
             <Text size="sm" fontWeight="$bold" mb="$0.5">
-              {i + 1}. {q}
+              {i + 1}. <NoTranslate>{q}</NoTranslate>
             </Text>
             {answers[i]?.trim() ? (
               <Text size="sm">{answers[i]}</Text>

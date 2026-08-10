@@ -14,7 +14,7 @@ import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { useSpeech } from '../../hooks/useSpeech'
 import { useVoiceCapture } from '../useVoiceCapture'
 import { logDrill, updateDrill } from '../../db'
-import { Box, HStack, VStack, Text, Muted, Btn, TextArea, SituationBox } from '../ui/kit'
+import { Box, HStack, VStack, Text, Muted, Btn, TextArea, SituationBox, NoTranslate} from '../ui/kit'
 
 interface Message {
   from: 'partner' | 'me'
@@ -290,7 +290,9 @@ function Bubble({
   return (
     <Box alignSelf={mine ? 'flex-end' : 'flex-start'} maxWidth="85%">
       <Box bg={mine ? '$primary600' : '$backgroundLight50'} borderRadius="$xl" px="$3.5" py="$2.5">
-        <Text color={mine ? '$white' : '$textLight600'}>{message.text}</Text>
+        <Text color={mine ? '$white' : '$textLight600'}>
+          <NoTranslate>{message.text}</NoTranslate>
+        </Text>
       </Box>
       {!mine && canReplay && (
         <Text size="2xs" color="$primary600" mt="$0.5" onPress={onReplay}>

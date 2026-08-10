@@ -496,7 +496,9 @@ export function FootActions({ children }: { children: ReactNode }) {
 export function SituationBox({ children }: { children: ReactNode }) {
   return (
     <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$lg" p="$3.5" my="$3">
-      <Text fontWeight="$medium">{children}</Text>
+      <Text fontWeight="$medium">
+        <NoTranslate>{children}</NoTranslate>
+      </Text>
     </Box>
   )
 }
@@ -520,7 +522,7 @@ export function ReadingBox({ title, children }: { title?: string; children: Reac
         </Heading>
       ) : null}
       <Text size="md" sx={{ whiteSpace: 'pre-line' }}>
-        {children}
+        <NoTranslate>{children}</NoTranslate>
       </Text>
     </Box>
   )
@@ -616,6 +618,24 @@ export function PillInfo({ children }: { children: ReactNode }) {
   return <Muted mt="$0">{children}</Muted>
 }
 
+/** Schützt Lernstoff vor der Seitenübersetzung.
+
+    Wenn die Oberfläche per Google Translate (oder der eingebauten Übersetzung
+    von Chrome/Safari) in eine andere Sprache gebracht wird, dürfen die deutschen
+    Übungsinhalte NICHT mitübersetzt werden - ein Lesetext auf Englisch, ein
+    englischer Diktatsatz oder eine übersetzte Vokabel machen die Übung wertlos.
+
+    translate="no" plus die Klasse "notranslate" werden von allen gängigen
+    Übersetzern respektiert. Alles, was der Lernende auf Deutsch lesen, hören
+    oder schreiben soll, gehört hier hinein. */
+export function NoTranslate({ children, block = false }: { children: ReactNode; block?: boolean }) {
+  return (
+    <span translate="no" className="notranslate" style={{ display: block ? 'block' : 'inline' }}>
+      {children}
+    </span>
+  )
+}
+
 /** Zustände eines antippbaren Wort-Chips (Satzbau-Puzzle, Fehlersuche, Diktat-Auswertung). */
 export type WordChipTone = 'neutral' | 'selected' | 'correct' | 'wrong' | 'warn' | 'muted'
 
@@ -654,9 +674,10 @@ export function WordChip({
     cursor: onPress ? 'pointer' : 'default',
     display: 'inline-block',
   }
+  // Die Wörter sind der Lernstoff - sie dürfen nie mitübersetzt werden.
   if (!onPress) {
     return (
-      <span style={style} title={title}>
+      <span style={style} title={title} translate="no" className="notranslate">
         {children}
       </span>
     )
@@ -667,6 +688,8 @@ export function WordChip({
       style={style}
       title={title}
       onClick={onPress}
+      translate="no"
+      className="notranslate"
       whileTap={{ scale: 0.94 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
     >

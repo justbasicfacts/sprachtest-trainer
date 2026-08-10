@@ -10,7 +10,7 @@ import { diffWords, type WordDiffEntry } from '../../lib/wordDiff'
 import { useSpeech } from '../../hooks/useSpeech'
 import { VoicePicker } from './VoicePicker'
 import { logDrill } from '../../db'
-import { Box, HStack, VStack, Text, Muted, Btn, ChipRow, WordChip, TextArea, Reveal } from '../ui/kit'
+import { Box, HStack, VStack, Text, Muted, Btn, ChipRow, WordChip, TextArea, Reveal, NoTranslate} from '../ui/kit'
 
 export function DictationDrill({ exercise }: { exercise: DictationExercise }) {
   const speech = useSpeech()
@@ -55,7 +55,9 @@ export function DictationDrill({ exercise }: { exercise: DictationExercise }) {
         <Box mt="$3">
           <Reveal label="💡 Satz stattdessen lesen">
             <Box bg="$backgroundLight0" borderRadius="$md" p="$3.5" mt="$2">
-              <Text>{exercise.sentence}</Text>
+              <Text>
+                <NoTranslate>{exercise.sentence}</NoTranslate>
+              </Text>
             </Box>
           </Reveal>
         </Box>
@@ -163,7 +165,9 @@ function DictationResult({
         <Text size="sm" fontWeight="$bold" mb="$0.5">
           Richtig ist:
         </Text>
-        <Text>{sentence}</Text>
+        <Text>
+          <NoTranslate>{sentence}</NoTranslate>
+        </Text>
       </Box>
 
       {watchOut && (

@@ -14,7 +14,7 @@ import type { ErrorHuntExercise } from '../../data/types'
 import { splitWords, findErrorIndices, normalizeSentence } from '../../lib/wordDiff'
 import { checkTrainingAnswer, type TrainingCheckResult } from '../../ai/checkTrainingAnswer'
 import { logDrill } from '../../db'
-import { Box, HStack, Text, Muted, Btn, ChipRow, WordChip, TextArea, Reveal } from '../ui/kit'
+import { Box, HStack, Text, Muted, Btn, ChipRow, WordChip, TextArea, Reveal, NoTranslate} from '../ui/kit'
 
 export function ErrorHuntDrill({ exercise }: { exercise: ErrorHuntExercise }) {
   const words = useMemo(() => splitWords(exercise.wrong), [exercise.wrong])
@@ -129,7 +129,9 @@ export function ErrorHuntDrill({ exercise }: { exercise: ErrorHuntExercise }) {
             <Text size="sm" fontWeight="$bold" mb="$0.5">
               Richtig ist:
             </Text>
-            <Text>{exercise.correct}</Text>
+            <Text>
+              <NoTranslate>{exercise.correct}</NoTranslate>
+            </Text>
           </Box>
           <Text size="sm">{exercise.why}</Text>
 

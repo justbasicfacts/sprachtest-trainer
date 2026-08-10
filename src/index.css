@@ -258,3 +258,48 @@ body {
     transform: translate(-50%, -48%) scale(0.96);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Google Website Translator: eigenes Auswahlfeld in die Kopfzeile einpassen und
+   das eingeblendete Google-Banner unterdrücken, das sonst die ganze Seite nach
+   unten schiebt (und die sticky-Kopfzeile verrutschen lässt).
+   --------------------------------------------------------------------------- */
+
+.lang-select {
+  flex: 0 0 auto;
+}
+
+/* Auswahlfeld an die dunkle Kopfzeile anpassen */
+.lang-select .goog-te-gadget {
+  font-size: 0 !important; /* blendet den "Powered by"-Text aus, das select bleibt */
+  line-height: 1;
+  color: transparent;
+}
+.lang-select .goog-te-gadget .goog-te-combo {
+  margin: 0 !important;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1D4E89;
+  background: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  max-width: 130px;
+}
+
+/* Banner-Frame und der von Google erzwungene Body-Versatz */
+.skiptranslate iframe,
+iframe.skiptranslate {
+  display: none !important;
+}
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+/* Google hebt übersetzte Textstellen sonst farbig hervor - das stört hier nur */
+font[style*="vertical-align"] {
+  vertical-align: inherit !important;
+  background: none !important;
+  box-shadow: none !important;
+}

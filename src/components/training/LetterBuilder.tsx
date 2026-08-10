@@ -15,7 +15,7 @@ import { checkTrainingAnswer, type TrainingCheckResult } from '../../ai/checkTra
 import { scoreWriting, type WritingScore } from '../../ai/scoreWriting'
 import { logDrill, updateDrill } from '../../db'
 import {
-  Box, HStack, VStack, Text, Muted, Btn, TextArea, ProgressBar, SituationBox, Reveal, ScoreBox,
+  Box, HStack, VStack, Text, Muted, Btn, TextArea, ProgressBar, SituationBox, Reveal, ScoreBox, NoTranslate,
 } from '../ui/kit'
 
 /** Baut aus den Bausteinen eine Teil-4-Aufgabe, wie sie scoreWriting() erwartet. */
@@ -215,7 +215,9 @@ export function LetterBuilder({ exercise }: { exercise: LetterBuilderExercise })
           <Box mt="$3">
             <Reveal label="💡 Musterformulierung für diesen Baustein">
               <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
-                <Text sx={{ whiteSpace: 'pre-line' }}>{block.sample}</Text>
+                <Text sx={{ whiteSpace: 'pre-line' }}>
+                  <NoTranslate>{block.sample}</NoTranslate>
+                </Text>
               </Box>
             </Reveal>
           </Box>
@@ -228,7 +230,9 @@ export function LetterBuilder({ exercise }: { exercise: LetterBuilderExercise })
             Dein Brief
           </Text>
           <Box bg="$backgroundLight50" borderWidth="$1" borderColor="$borderLight200" borderRadius="$lg" p="$4">
-            <Text sx={{ whiteSpace: 'pre-line' }}>{letter}</Text>
+            <Text sx={{ whiteSpace: 'pre-line' }}>
+              <NoTranslate>{letter}</NoTranslate>
+            </Text>
           </Box>
 
           <HStack gap="$2.5" flexWrap="wrap" alignItems="center" mt="$3">

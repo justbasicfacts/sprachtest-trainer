@@ -29,7 +29,7 @@ import { MethodExerciseView } from './training/MethodExerciseView'
 import { openLayer, backLayer } from '../appHistory'
 import {
   Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle,
-  BackLink, Reveal, AppCard, Tag, SituationBox,
+  BackLink, Reveal, AppCard, Tag, SituationBox, NoTranslate,
 } from './ui/kit'
 
 type Selection =
@@ -269,7 +269,9 @@ function SkillExerciseView({ skill, exercise }: { skill: TrainingSkill; exercise
         <Box mt="$3">
           <Reveal label="💡 Musterlösung anzeigen">
             <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
-              <Text sx={{ whiteSpace: 'pre-line' }}>{exercise.sampleAnswer}</Text>
+              <Text sx={{ whiteSpace: 'pre-line' }}>
+                <NoTranslate>{exercise.sampleAnswer}</NoTranslate>
+              </Text>
             </Box>
           </Reveal>
         </Box>

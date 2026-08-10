@@ -12,7 +12,7 @@ import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { blobToWavBase64 } from '../../ai/audioWav'
 import { logDrill, updateDrill } from '../../db'
 import {
-  Box, HStack, VStack, Text, Muted, Btn, ProgressBar, ScoreBox, TimerDisplay, TextArea,
+  Box, HStack, VStack, Text, Muted, Btn, ProgressBar, ScoreBox, TimerDisplay, TextArea, NoTranslate,
 } from '../ui/kit'
 
 export function Monologue({ exercise }: { exercise: MonologueExercise }) {
@@ -114,7 +114,7 @@ export function Monologue({ exercise }: { exercise: MonologueExercise }) {
     <Box>
       <Box bg="$yellow50" borderWidth="$1" borderColor="$yellow200" borderRadius="$lg" p="$3.5" mb="$3">
         <Text fontSize={18} fontWeight="$bold" mb="$1.5">
-          {exercise.topic}
+          <NoTranslate>{exercise.topic}</NoTranslate>
         </Text>
         <Muted>Diese drei Punkte sollen vorkommen:</Muted>
         <VStack mt="$1" gap="$0.5">

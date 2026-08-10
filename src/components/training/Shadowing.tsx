@@ -16,7 +16,7 @@ import { useVoiceCapture } from '../useVoiceCapture'
 import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { blobToWavBase64 } from '../../ai/audioWav'
 import { logDrill } from '../../db'
-import { Box, HStack, VStack, Text, Muted, Btn, ProgressBar, ChipRow, WordChip } from '../ui/kit'
+import { Box, HStack, VStack, Text, Muted, Btn, ProgressBar, ChipRow, WordChip, NoTranslate} from '../ui/kit'
 
 const CRITERIA = [
   'Alle Wörter des Satzes wurden gesprochen',
@@ -155,7 +155,7 @@ function ShadowingSentence({
       <Box bg="$primary50" borderRadius="$lg" p="$3.5" mb="$3">
         {revealed ? (
           <Text fontSize={17} fontWeight="$medium">
-            {sentence}
+            <NoTranslate>{sentence}</NoTranslate>
           </Text>
         ) : (
           <Muted>Der Satz wird vorgelesen - hör erst einmal nur zu. (Text lässt sich unten einblenden.)</Muted>

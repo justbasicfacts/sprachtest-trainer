@@ -12,7 +12,7 @@ import { splitWords, normalizeSentence } from '../../lib/wordDiff'
 import { checkTrainingAnswer, type TrainingCheckResult } from '../../ai/checkTrainingAnswer'
 import { logDrill } from '../../db'
 import {
-  Box, HStack, Text, Muted, Btn, ChipRow, WordChip, Reveal,
+  Box, HStack, Text, Muted, Btn, ChipRow, WordChip, Reveal, NoTranslate,
 } from '../ui/kit'
 
 interface Token {
@@ -190,7 +190,9 @@ export function WordOrderDrill({ exercise }: { exercise: WordOrderExercise }) {
           <Box mt="$3">
             <Reveal label="💡 Lösung anzeigen">
               <Box bg="$backgroundLight50" borderRadius="$md" p="$3.5" mt="$2">
-                <Text fontWeight="$semibold">{exercise.solution}</Text>
+                <Text fontWeight="$semibold">
+                  <NoTranslate>{exercise.solution}</NoTranslate>
+                </Text>
                 <Text size="sm" mt="$1.5">
                   {exercise.why}
                 </Text>

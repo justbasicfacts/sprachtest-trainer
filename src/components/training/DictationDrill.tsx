@@ -8,6 +8,7 @@ import { useState } from 'react'
 import type { DictationExercise } from '../../data/types'
 import { diffWords, type WordDiffEntry } from '../../lib/wordDiff'
 import { useSpeech } from '../../hooks/useSpeech'
+import { VoicePicker } from './VoicePicker'
 import { logDrill } from '../../db'
 import { Box, HStack, VStack, Text, Muted, Btn, ChipRow, WordChip, TextArea, Reveal } from '../ui/kit'
 
@@ -78,6 +79,8 @@ export function DictationDrill({ exercise }: { exercise: DictationExercise }) {
         )}
         {plays > 0 && <Muted>{plays}× gehört</Muted>}
       </HStack>
+
+      <VoicePicker speech={speech} />
 
       <Box mt="$3">
         <Muted>Schreib auf, was du hörst:</Muted>

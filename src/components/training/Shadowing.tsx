@@ -11,6 +11,7 @@ import { useState } from 'react'
 import type { ShadowingExercise } from '../../data/types'
 import { diffWords } from '../../lib/wordDiff'
 import { useSpeech } from '../../hooks/useSpeech'
+import { VoicePicker } from './VoicePicker'
 import { useVoiceCapture } from '../useVoiceCapture'
 import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { blobToWavBase64 } from '../../ai/audioWav'
@@ -52,6 +53,8 @@ export function Shadowing({ exercise }: { exercise: ShadowingExercise }) {
         {exercise.focus && <Muted>{exercise.focus}</Muted>}
       </HStack>
       <ProgressBar value={((idx + 1) / exercise.sentences.length) * 100} />
+
+      <VoicePicker speech={speech} />
 
       {/* key: bei jedem Satzwechsel wird die Aufnahme sauber zurückgesetzt */}
       <ShadowingSentence

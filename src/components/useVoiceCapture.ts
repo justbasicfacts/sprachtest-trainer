@@ -165,6 +165,10 @@ export function useVoiceCapture() {
   }
 
   const reset = () => {
+    // Auch die Ref sofort leeren: Ein direkt folgendes start() liest sie als
+    // sessionBase aus, bevor der useEffect den State nachgezogen hat - sonst
+    // hinge der alte Text noch vor der neuen Aufnahme.
+    transcriptRef.current = ''
     setTranscript('')
     setAudioBlob(null)
     setMicError(null)
@@ -176,6 +180,9 @@ export function useVoiceCapture() {
     srSupported, recSupported,
     supported: srSupported || recSupported,
     recording, transcript, setTranscript, interim,
+    /** Immer der aktuelle Transkript-Stand, auch aus Callbacks heraus (z. B. dem
+        Timer der Blitzrunde), die sonst einen veralteten State-Wert sehen würden. */
+    transcriptRef,
     audioBlob, audioUrl, micError, wordCount,
     start, stop, reset,
   }

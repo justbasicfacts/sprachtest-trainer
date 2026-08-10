@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import { VOCAB_SEED } from './data/vocab'
-import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task, TrainingExercise } from './data/types'
+import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task, TrainingExercise, MethodExercise, MethodKind } from './data/types'
 
 export interface VocabWord {
   id?: number
@@ -47,11 +47,40 @@ export interface GeneratedTrainingRecord {
   createdAt: number
 }
 
+/** Von der KI generierte Übung zu einer Übungsform (Satzbau, Diktat, Dialog, ...),
+    lokal gespeichert. Bewusst ein eigener Store neben `trainingGenerated`: Die
+    Methoden-Übungen haben je nach Form ganz andere Felder, und so bleiben die
+    bestehenden Datensätze der Fähigkeiten-Übungen unberührt. */
+export interface GeneratedMethodRecord {
+  id: string
+  methodId: MethodKind
+  exercise: MethodExercise
+  createdAt: number
+}
+
+/** Ein Übungsversuch - Grundlage für die Fortschrittsanzeige ("Trefferquote",
+    "Wörter pro Minute im Verlauf"). Absichtlich getrennt von `results`, damit die
+    Prüfungsergebnisse auf der Startseite nicht mit Übungsversuchen vermischt werden. */
+export interface DrillRecord {
+  id?: number
+  methodId: MethodKind
+  exerciseId: string
+  /** Richtig gelöst? Bei Sprechübungen: Auswertung erfolgreich abgeschlossen. */
+  ok: boolean
+  /** Freies Zusatzfeld, z. B. die gebaute Wortstellung oder Wörter/Minute */
+  detail?: string
+  /** Optionale Kennzahl für Verläufe (z. B. Wörter pro Minute, Trefferquote in %) */
+  value?: number
+  ts: number
+}
+
 class AppDatabase extends Dexie {
   vocab!: Table<VocabWord, number>
   results!: Table<ExamResult, number>
   generated!: Table<GeneratedTaskRecord, string>
   trainingGenerated!: Table<GeneratedTrainingRecord, string>
+  methodGenerated!: Table<GeneratedMethodRecord, string>
+  drills!: Table<DrillRecord, number>
 
   constructor() {
     super('sprachtest-trainer')
@@ -70,6 +99,16 @@ class AppDatabase extends Dexie {
       generated: 'id, part, createdAt',
       trainingGenerated: 'id, skillId, createdAt',
     })
+    // v4: Übungsformen ("Methoden") - eigener Store für KI-Übungen und ein
+    // Versuchsprotokoll. Rein additiv, bestehende Daten bleiben unverändert.
+    this.version(4).stores({
+      vocab: '++id, de, due, tag, custom',
+      results: '++id, date',
+      generated: 'id, part, createdAt',
+      trainingGenerated: 'id, skillId, createdAt',
+      methodGenerated: 'id, methodId, createdAt',
+      drills: '++id, methodId, ts',
+    })
   }
 }
 
@@ -86,6 +125,21 @@ export async function saveGeneratedTask(
 /** Speichert eine von der KI generierte Trainings-Übung lokal, damit sie den Reload übersteht */
 export async function saveGeneratedTrainingExercise(skillId: string, exercise: TrainingExercise): Promise<void> {
   await db.trainingGenerated.add({ id: exercise.id, skillId, exercise, createdAt: Date.now() })
+}
+
+/** Speichert eine von der KI generierte Übung zu einer Übungsform lokal */
+export async function saveGeneratedMethodExercise(methodId: MethodKind, exercise: MethodExercise): Promise<void> {
+  await db.methodGenerated.add({ id: exercise.id, methodId, exercise, createdAt: Date.now() })
+}
+
+/** Protokolliert einen Übungsversuch. Bewusst "fire and forget": Ein Fehler beim
+    Schreiben (z. B. privater Modus ohne IndexedDB) darf die Übung nie unterbrechen. */
+export async function logDrill(entry: Omit<DrillRecord, 'id' | 'ts'>): Promise<void> {
+  try {
+    await db.drills.add({ ...entry, ts: Date.now() })
+  } catch (err) {
+    console.warn('[db] Übungsversuch konnte nicht gespeichert werden:', err)
+  }
 }
 
 /** Seed the vocab table on first run (guarded against double-invocation, e.g. React StrictMode) */

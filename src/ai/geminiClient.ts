@@ -75,12 +75,23 @@ function combineSignals(signals: AbortSignal[]): AbortSignal {
 /** Gemini-Schema im REST-Format (Teilmenge von OpenAPI, Typen in GROSSBUCHSTABEN). */
 export type GeminiSchema = Record<string, unknown>
 
+/** Ein bereits gelaufener Gesprächszug - für mehrstufige Dialoge (Rollenspiel). */
+export interface GeminiTurn {
+  /** 'user' = der Lernende, 'model' = die Antwort der KI */
+  role: 'user' | 'model'
+  text: string
+}
+
 interface GeminiJsonOpts<T> {
   model: string
   /** Ausweichmodell, wenn das Hauptmodell überlastet bleibt (503/429). */
   fallbackModel?: string
   system: string
   user: string
+  /** Bisheriger Gesprächsverlauf, der VOR dem aktuellen user-Text steht. Leer
+      lassen für die üblichen Einzelaufrufe; das Rollenspiel schickt hier die
+      bisherigen Züge mit, damit die KI im Gespräch bleibt. */
+  history?: GeminiTurn[]
   /** Optionale Audiodaten (z. B. eine Sprachaufnahme), die Gemini mit analysieren soll. */
   audio?: { mimeType: string; base64: string }
   responseSchema: GeminiSchema
@@ -158,6 +169,7 @@ async function callOnce<T>(model: string, key: string, opts: GeminiJsonOpts<T>):
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: opts.system }] },
       contents: [
+        ...(opts.history ?? []).map((turn) => ({ role: turn.role, parts: [{ text: turn.text }] })),
         {
           role: 'user',
           parts: [

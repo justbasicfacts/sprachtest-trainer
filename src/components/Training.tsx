@@ -1,33 +1,47 @@
-/* Gezieltes Training: Übungen zu einzelnen Fähigkeiten (z. B. Bildbeschreibung,
-   Vor-/Nachteile abwägen, Präpositionen, Nebensätze, Konnektoren) - unabhängig vom
-   Prüfungsformat. Gedacht für Schwächen, die z. B. der Lernplan nach einer
-   Prüfungssimulation genannt hat. Jede Fähigkeit hat statische Übungen; per Klick
-   erstellt die KI bei Bedarf weitere im gleichen Format (bleiben lokal gespeichert). */
+/* Gezieltes Training - zwei Achsen:
+
+   1. "Nach Fähigkeit" (TRAINING_SKILLS): WAS geübt wird - Bildbeschreibung,
+      Vor-/Nachteile, Präpositionen, Nebensätze, Konnektoren. Gedacht für
+      Schwächen, die der Lernplan nach einer Prüfungssimulation genannt hat.
+   2. "Nach Übungsform" (TRAINING_METHODS): WIE geübt wird - Satzbau-Puzzle,
+      Fehlersuche, Diktat, Brief-Baukasten, Dialog, Blitzrunde, Nachsprechen,
+      Monolog. Jede Form bringt ihre eigene Bedienung und Auswertung mit.
+
+   Diese Datei ist nur noch der Router zwischen beiden; die eigentlichen
+   Übungsformen liegen in components/training/. */
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { TRAINING_SKILLS } from '../data/training'
-import type { TrainingExercise, TrainingSkill } from '../data/types'
-import { db, saveGeneratedTrainingExercise, type GeneratedTrainingRecord } from '../db'
+import { TRAINING_METHODS } from '../data/methods'
+import type { TrainingExercise, TrainingSkill, TrainingMethod, MethodExercise, MethodKind } from '../data/types'
+import {
+  db, saveGeneratedTrainingExercise, saveGeneratedMethodExercise,
+  type GeneratedTrainingRecord, type GeneratedMethodRecord, type DrillRecord,
+} from '../db'
 import { generateTrainingExercise } from '../ai/generateTrainingExercise'
-import { checkTrainingAnswer, type TrainingCheckResult } from '../ai/checkTrainingAnswer'
+import { generateMethodExercise, canGenerate } from '../ai/generateMethodExercise'
 import { SpeakPractice } from './SpeakPractice'
 import { TranslateZone } from './useWordTranslate'
+import { WritingDrill } from './training/WritingDrill'
+import { MethodExerciseView } from './training/MethodExerciseView'
 import { openLayer, backLayer } from '../appHistory'
 import {
-  Box, HStack, VStack, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle,
-  BackLink, Btn, FootActions, Reveal, AppCard, Tag, SituationBox,
+  Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle,
+  BackLink, Reveal, AppCard, Tag, SituationBox,
 } from './ui/kit'
 
-export default function Training() {
-  const [skillId, setSkillId] = useState<string | null>(null)
-  const [exIdx, setExIdx] = useState<number | null>(null)
-  const [generating, setGenerating] = useState(false)
-  const [genError, setGenError] = useState<string | null>(null)
+type Selection =
+  | { axis: 'skill'; id: string }
+  | { axis: 'method'; id: string }
 
-  const openSkill = (id: string) => {
-    setSkillId(id)
+export default function Training() {
+  const [sel, setSel] = useState<Selection | null>(null)
+  const [exIdx, setExIdx] = useState<number | null>(null)
+
+  const open = (next: Selection) => {
+    setSel(next)
     openLayer(() => {
-      setSkillId(null)
+      setSel(null)
       setExIdx(null)
     })
   }
@@ -36,37 +50,125 @@ export default function Training() {
     openLayer(() => setExIdx(null))
   }
 
-  const generatedForSkill = useLiveQuery<GeneratedTrainingRecord[], GeneratedTrainingRecord[]>(
-    () => (skillId === null ? Promise.resolve([]) : db.trainingGenerated.where('skillId').equals(skillId).sortBy('createdAt')),
-    [skillId],
-    []
-  )
+  if (sel === null) return <Overview onOpen={open} />
 
-  if (skillId === null) {
-    return (
-      <>
-        <Heading size="xl" color="$primary600" mb="$1">🛠️ Gezieltes Training</Heading>
-        <Muted>
-          Übe einzelne Fähigkeiten, die dir noch schwerfallen - z. B. weil dein Lernplan nach einer
-          Prüfungssimulation genau das genannt hat.
-        </Muted>
-        <Box mt="$4">
+  if (sel.axis === 'skill') {
+    const skill = TRAINING_SKILLS.find((s) => s.id === sel.id)
+    if (!skill) return null
+    return <SkillView skill={skill} exIdx={exIdx} openExercise={openExercise} />
+  }
+
+  const method = TRAINING_METHODS.find((m) => m.id === sel.id)
+  if (!method) return null
+  return <MethodView method={method} exIdx={exIdx} openExercise={openExercise} />
+}
+
+/* --------------------------------- Übersicht --------------------------------- */
+
+function Overview({ onOpen }: { onOpen: (sel: Selection) => void }) {
+  const writeMethods = TRAINING_METHODS.filter((m) => m.channel === 'write')
+  const speakMethods = TRAINING_METHODS.filter((m) => m.channel === 'speak')
+
+  return (
+    <>
+      <Heading size="xl" color="$primary600" mb="$1">
+        🛠️ Gezieltes Training
+      </Heading>
+      <Muted>
+        Zwei Wege: Übe eine Fähigkeit, die dir schwerfällt - oder wähle eine Übungsform, die zu deiner heutigen
+        Lust und Zeit passt.
+      </Muted>
+
+      <Box mt="$5">
+        <Heading size="md" color="$primary600" mb="$1">
+          Nach Fähigkeit
+        </Heading>
+        <Muted>Was du verbessern willst - z. B. weil dein Lernplan nach einer Prüfungssimulation das genannt hat.</Muted>
+        <Box mt="$3">
           <TileGrid>
             {TRAINING_SKILLS.map((s) => (
-              <Tile key={s.id} onPress={() => openSkill(s.id)}>
+              <Tile key={s.id} onPress={() => onOpen({ axis: 'skill', id: s.id })}>
                 <TileEmoji>{s.icon}</TileEmoji>
                 <TileTitle>{s.title}</TileTitle>
-                <Muted>{s.mode === 'speak' ? '🎤 Sprechen' : '✍️ Schreiben'} · {s.exercises.length}+ Übungen</Muted>
+                <Muted>
+                  {s.mode === 'speak' ? '🎤 Sprechen' : '✍️ Schreiben'} · {s.exercises.length}+ Übungen
+                </Muted>
               </Tile>
             ))}
           </TileGrid>
         </Box>
-      </>
-    )
-  }
+      </Box>
 
-  const skill = TRAINING_SKILLS.find((s) => s.id === skillId)
-  if (!skill) return null
+      <Box mt="$3">
+        <Heading size="md" color="$primary600" mb="$1">
+          Nach Übungsform
+        </Heading>
+        <Muted>Wie du übst. Vier Formen funktionieren ganz ohne KI und damit auch ohne API-Key.</Muted>
+
+        <Box mt="$3">
+          <Text size="sm" fontWeight="$bold" mb="$2">
+            ✍️ Schreiben
+          </Text>
+          <TileGrid>
+            {writeMethods.map((m) => (
+              <MethodTile key={m.id} method={m} onPress={() => onOpen({ axis: 'method', id: m.id })} />
+            ))}
+          </TileGrid>
+        </Box>
+
+        <Box>
+          <Text size="sm" fontWeight="$bold" mb="$2">
+            🗣️ Sprechen
+          </Text>
+          <TileGrid>
+            {speakMethods.map((m) => (
+              <MethodTile key={m.id} method={m} onPress={() => onOpen({ axis: 'method', id: m.id })} />
+            ))}
+          </TileGrid>
+        </Box>
+      </Box>
+    </>
+  )
+}
+
+const AI_LABEL: Record<TrainingMethod['needsAi'], string> = {
+  nie: '🔌 ohne KI',
+  optional: '🔌 KI optional',
+  immer: '🤖 braucht KI',
+}
+
+function MethodTile({ method, onPress }: { method: TrainingMethod; onPress: () => void }) {
+  return (
+    <Tile onPress={onPress}>
+      <TileEmoji>{method.icon}</TileEmoji>
+      <TileTitle>{method.title}</TileTitle>
+      <Muted>{method.short}</Muted>
+      <Box mt="$1.5">
+        <Text size="2xs" color="$textLight500">
+          {AI_LABEL[method.needsAi]}
+        </Text>
+      </Box>
+    </Tile>
+  )
+}
+
+/* ------------------------------ Nach Fähigkeit ------------------------------ */
+
+function SkillView({
+  skill, exIdx, openExercise,
+}: {
+  skill: TrainingSkill
+  exIdx: number | null
+  openExercise: (i: number) => void
+}) {
+  const [generating, setGenerating] = useState(false)
+  const [genError, setGenError] = useState<string | null>(null)
+
+  const generatedForSkill = useLiveQuery<GeneratedTrainingRecord[], GeneratedTrainingRecord[]>(
+    () => db.trainingGenerated.where('skillId').equals(skill.id).sortBy('createdAt'),
+    [skill.id],
+    []
+  )
 
   const pool: TrainingExercise[] = [...skill.exercises, ...generatedForSkill.map((g) => g.exercise)]
 
@@ -84,50 +186,59 @@ export default function Training() {
     }
   }
 
-  if (exIdx === null) {
+  if (exIdx !== null && pool[exIdx]) {
     return (
       <>
-        <BackLink onPress={backLayer} />
-        <Heading size="lg" color="$primary600" mb="$1">{skill.icon} {skill.title}</Heading>
-        <Box mb="$3">
-          <Muted>{skill.focus}</Muted>
-        </Box>
-        <TileGrid>
-          <Tile onPress={generating ? undefined : generate} disabled={generating}>
-            <TileEmoji>🤖</TileEmoji>
-            <TileTitle>{generating ? 'Wird erstellt …' : 'Neue Übung generieren'}</TileTitle>
-            <Muted>Die KI erstellt eine weitere Übung zu genau dieser Fähigkeit.</Muted>
-          </Tile>
-          {pool.map((ex, i) => (
-            <Tile key={ex.id} onPress={() => openExercise(i)}>
-              <TileTitle>
-                Übung {i + 1}{ex.id.startsWith('ai-') && ' 🤖'}
-              </TileTitle>
-              <Muted>{ex.prompt.length > 80 ? ex.prompt.slice(0, 80) + '…' : ex.prompt}</Muted>
-            </Tile>
-          ))}
-        </TileGrid>
-        {genError && (
-          <Text color="$error600" size="sm" mt="$2">⚠️ {genError}</Text>
-        )}
+        <BackLink onPress={backLayer}>← andere Übung wählen</BackLink>
+        <SkillExerciseView skill={skill} exercise={pool[exIdx]} />
       </>
     )
   }
 
   return (
     <>
-      <BackLink onPress={backLayer}>← andere Übung wählen</BackLink>
-      <ExerciseView skill={skill} exercise={pool[exIdx]} />
+      <BackLink onPress={backLayer} />
+      <Heading size="lg" color="$primary600" mb="$1">
+        {skill.icon} {skill.title}
+      </Heading>
+      <Box mb="$3">
+        <Muted>{skill.focus}</Muted>
+      </Box>
+      <TileGrid>
+        <Tile onPress={generating ? undefined : generate} disabled={generating}>
+          <TileEmoji>🤖</TileEmoji>
+          <TileTitle>{generating ? 'Wird erstellt …' : 'Neue Übung generieren'}</TileTitle>
+          <Muted>Die KI erstellt eine weitere Übung zu genau dieser Fähigkeit.</Muted>
+        </Tile>
+        {pool.map((ex, i) => (
+          <Tile key={ex.id} onPress={() => openExercise(i)}>
+            <TileTitle>
+              Übung {i + 1}
+              {ex.id.startsWith('ai-') && ' 🤖'}
+            </TileTitle>
+            <Muted>{ex.prompt.length > 80 ? ex.prompt.slice(0, 80) + '…' : ex.prompt}</Muted>
+          </Tile>
+        ))}
+      </TileGrid>
+      {genError && (
+        <Text color="$error600" size="sm" mt="$2">
+          ⚠️ {genError}
+        </Text>
+      )}
     </>
   )
 }
 
-function ExerciseView({ skill, exercise }: { skill: TrainingSkill; exercise: TrainingExercise }) {
+function SkillExerciseView({ skill, exercise }: { skill: TrainingSkill; exercise: TrainingExercise }) {
   return (
     <TranslateZone>
       <AppCard>
-        <Tag>{skill.icon} {skill.title}</Tag>
-        <Text fontWeight="$bold" mb="$1.5">{exercise.instruction}</Text>
+        <Tag>
+          {skill.icon} {skill.title}
+        </Tag>
+        <Text fontWeight="$bold" mb="$1.5">
+          {exercise.instruction}
+        </Text>
         <SituationBox>{exercise.prompt}</SituationBox>
         {exercise.hint && (
           <Box bg="$backgroundLight50" borderRadius="$md" p="$3" mt="$1">
@@ -163,97 +274,162 @@ function buildSpeakContext(skill: TrainingSkill, exercise: TrainingExercise): st
   )
 }
 
-/** Vergleicht zwei Sätze robust gegen Groß-/Kleinschreibung, Anführungszeichen,
-    doppelte Leerzeichen und schließende Satzzeichen - für den schnellen lokalen
-    Abgleich, bevor überhaupt die KI gefragt wird. */
-function normalizeAnswer(s: string): string {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/[„"“”‘’]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/[.!?]+$/, '')
+/* ----------------------------- Nach Übungsform ----------------------------- */
+
+/** Kurzer Text, der eine Übung in der Auswahlliste erkennbar macht. Jede
+    Übungsform trägt ihren Inhalt in einem anderen Feld, deshalb hier gebündelt. */
+function exerciseLabel(ex: MethodExercise): string {
+  switch (ex.kind) {
+    case 'wordorder':
+      return ex.solution
+    case 'errorhunt':
+      return ex.wrong
+    case 'dictation':
+      return ex.watchOut ?? 'Diktat-Satz'
+    case 'letterbuilder':
+      return ex.situation
+    case 'roleplay':
+      return ex.situation
+    case 'blitz':
+      return `${ex.questions.length} Fragen · ${ex.seconds} Sekunden pro Antwort`
+    case 'shadowing':
+      return `${ex.sentences.length} Sätze${ex.focus ? ` · ${ex.focus}` : ''}`
+    case 'monologue':
+      return `${ex.topic} · ${ex.seconds} Sekunden`
+  }
 }
 
-/** Schreib-Übung mit KI-Korrektur (für die 'write'-Fähigkeiten: Präpositionen,
-    Nebensätze, Konnektoren, ...). Gleicht die Antwort zuerst lokal mit der
-    Musterlösung ab (spart einen KI-Aufruf bei einem klaren Treffer) und fragt nur
-    bei allem anderen die KI, ob die Antwort trotzdem richtig ist. */
-function WritingDrill({ exercise, criteria }: { exercise: TrainingExercise; criteria: string[] }) {
-  const [text, setText] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<TrainingCheckResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+/** Überschrift einer Übung in der Liste. Bei den Formen mit eigenem Titel (Dialog,
+    Blitzrunde, Nachsprechen, Monolog) ist eine Nummer wenig hilfreich. */
+function exerciseTitle(ex: MethodExercise, index: number): string {
+  switch (ex.kind) {
+    case 'roleplay':
+      return ex.partnerRole.split(',')[0]
+    case 'monologue':
+      return ex.topic
+    case 'shadowing':
+      return ex.focus ?? `Set ${index + 1}`
+    case 'blitz':
+      return ex.instruction.startsWith('Antworte') ? `Runde ${index + 1}` : ex.instruction
+    default:
+      return `Übung ${index + 1}`
+  }
+}
 
-  const run = async () => {
-    setError(null)
+function MethodView({
+  method, exIdx, openExercise,
+}: {
+  method: TrainingMethod
+  exIdx: number | null
+  openExercise: (i: number) => void
+}) {
+  const [generating, setGenerating] = useState(false)
+  const [genError, setGenError] = useState<string | null>(null)
 
-    // Schneller lokaler Abgleich: entspricht die Antwort (bis auf Kleinigkeiten wie
-    // Anführungszeichen/Satzzeichen) der Musterlösung, brauchen wir die KI gar nicht.
-    if (normalizeAnswer(text) === normalizeAnswer(exercise.sampleAnswer)) {
-      setResult({ ok: true, feedback: 'Genau richtig - das entspricht der Musterlösung!', corrected: text })
-      return
-    }
+  const generated = useLiveQuery<GeneratedMethodRecord[], GeneratedMethodRecord[]>(
+    () => db.methodGenerated.where('methodId').equals(method.id).sortBy('createdAt'),
+    [method.id],
+    []
+  )
 
-    setLoading(true)
+  const pool: MethodExercise[] = [...method.exercises, ...generated.map((g) => g.exercise)]
+
+  const generate = async () => {
+    setGenerating(true)
+    setGenError(null)
     try {
-      setResult(
-        await checkTrainingAnswer({
-          data: { instruction: exercise.instruction, prompt: exercise.prompt, hint: exercise.hint, answer: text },
-        })
-      )
+      const exercise = await generateMethodExercise(method.id, pool)
+      await saveGeneratedMethodExercise(method.id, exercise)
+      openExercise(pool.length)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Die Bewertung ist fehlgeschlagen.')
+      setGenError(err instanceof Error ? err.message : 'Die Übung konnte nicht erstellt werden.')
     } finally {
-      setLoading(false)
+      setGenerating(false)
     }
   }
 
+  if (exIdx !== null && pool[exIdx]) {
+    return (
+      <>
+        <BackLink onPress={backLayer}>← andere Übung wählen</BackLink>
+        <MethodExerciseView method={method} exercise={pool[exIdx]} />
+      </>
+    )
+  }
+
   return (
-    <Box mt="$3.5" borderTopWidth="$1" borderTopColor="$borderLight200" pt="$3.5">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Schreib deine Antwort hier …"
-        style={{
-          width: '100%', minHeight: 90, border: '1.5px solid #DBDBDB', borderRadius: 10,
-          padding: 12, fontSize: 15, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box',
-        }}
-      />
-      <FootActions>
-        <Btn variant="gold" onPress={run} disabled={loading || text.trim().length < 3}>
-          {loading ? 'KI prüft …' : '🤖 Antwort prüfen lassen'}
-        </Btn>
-      </FootActions>
-
-      {error && (
-        <Text color="$error600" size="sm" mt="$2">⚠️ {error}</Text>
-      )}
-
-      {result && (
-        <Box borderWidth="$1" borderColor="$borderLight200" borderRadius="$xl" p="$4" mt="$3">
-          <HStack alignItems="center" gap="$2.5" mb="$1.5">
-            <Text>{result.ok ? '✅' : '❌'}</Text>
-            <Text fontWeight="$semibold">{result.ok ? 'Passt!' : 'Da geht noch was'}</Text>
-          </HStack>
-          <Muted>{result.feedback}</Muted>
-          <Box bg="$backgroundLight50" borderRadius="$md" p="$3" mt="$2.5">
-            <Text size="sm" fontWeight="$bold" mb="$0.5">Verbesserte Version:</Text>
-            <Text sx={{ whiteSpace: 'pre-line' }}>{result.corrected}</Text>
-          </Box>
+    <>
+      <BackLink onPress={backLayer} />
+      <Heading size="lg" color="$primary600" mb="$1">
+        {method.icon} {method.title}
+      </Heading>
+      <Box mb="$3">
+        <Muted>{method.focus}</Muted>
+      </Box>
+      {method.needsAi !== 'immer' && (
+        <Box bg="$success50" borderWidth="$1" borderColor="$success300" borderRadius="$md" p="$3" mb="$3">
+          <Text size="sm">
+            {method.needsAi === 'nie'
+              ? '🔌 Diese Übungsform läuft komplett in deinem Browser - ohne KI und ohne API-Key.'
+              : '🔌 Die Prüfung läuft lokal. Die KI wird nur gefragt, wenn du es ausdrücklich möchtest.'}
+          </Text>
         </Box>
       )}
-
-      {criteria.length > 0 && (
-        <Box mt="$3">
-          <Muted>Worauf du achten solltest:</Muted>
-          <VStack mt="$1">
-            {criteria.map((c, i) => (
-              <Text key={i} size="sm" pl="$4">• {c}</Text>
-            ))}
-          </VStack>
-        </Box>
+      <MethodProgress methodId={method.id} />
+      <TileGrid>
+        {canGenerate(method.id) && (
+          <Tile onPress={generating ? undefined : generate} disabled={generating}>
+            <TileEmoji>🤖</TileEmoji>
+            <TileTitle>{generating ? 'Wird erstellt …' : 'Neue Übung generieren'}</TileTitle>
+            <Muted>Die KI erstellt eine weitere Übung in genau diesem Format.</Muted>
+          </Tile>
+        )}
+        {pool.map((ex, i) => (
+          <Tile key={ex.id} onPress={() => openExercise(i)}>
+            <TileTitle>
+              {exerciseTitle(ex, i)}
+              {ex.id.startsWith('ai-') && ' 🤖'}
+            </TileTitle>
+            <Muted>{truncate(exerciseLabel(ex), 90)}</Muted>
+          </Tile>
+        ))}
+      </TileGrid>
+      {genError && (
+        <Text color="$error600" size="sm" mt="$2">
+          ⚠️ {genError}
+        </Text>
       )}
+    </>
+  )
+}
+
+/** Kurze Rückmeldung über die letzten Versuche in dieser Übungsform. Wird erst
+    ab drei Versuchen eingeblendet - vorher ist eine Quote nicht aussagekräftig
+    und würde nach einem Fehlstart nur entmutigen. */
+function MethodProgress({ methodId }: { methodId: MethodKind }) {
+  const recent = useLiveQuery<DrillRecord[], DrillRecord[]>(
+    () => db.drills.where('methodId').equals(methodId).reverse().limit(20).toArray(),
+    [methodId],
+    []
+  )
+
+  if (recent.length < 3) return null
+
+  const ok = recent.filter((d) => d.ok).length
+  const values = recent.filter((d) => typeof d.value === 'number').map((d) => d.value as number)
+  const avg = values.length > 0 ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null
+
+  return (
+    <Box bg="$backgroundLight50" borderRadius="$md" p="$3" mb="$3">
+      <Text size="sm">
+        📈 Deine letzten {recent.length} Versuche: <Text size="sm" fontWeight="$bold">{ok} gut gelöst</Text>
+        {avg !== null && methodId === 'monologue' && ` · im Schnitt ${avg} Wörter/Minute`}
+        {avg !== null && (methodId === 'dictation' || methodId === 'shadowing') && ` · im Schnitt ${avg} % Treffer`}
+      </Text>
     </Box>
   )
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + '…' : s
 }

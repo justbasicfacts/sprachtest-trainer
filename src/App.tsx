@@ -202,7 +202,7 @@ function Home({ go }: { go: (v: TabId) => void }) {
     { id: 'practice', icon: '🎯', title: 'Üben', sub: 'Alle Aufgaben ohne Zeitdruck, mit sofortigem Feedback und Erklärungen.' },
     { id: 'exam', icon: '⏱️', title: 'Prüfungssimulation', sub: 'Kompletter schriftlicher Test mit echter Zeit: 30 Min. Lesen + 20 Min. Schreiben.' },
     { id: 'speak', icon: '🗣️', title: 'Sprechen', sub: 'Kennenlernen-Fragen, Fotobeschreibung mit Originalfotos und Situationen mit Pro & Contra.' },
-    { id: 'training', icon: '🛠️', title: 'Gezieltes Training', sub: 'Einzelne Fähigkeiten gezielt üben - z. B. aus deinem Lernplan nach einer Prüfungssimulation.' },
+    { id: 'training', icon: '🛠️', title: 'Gezieltes Training', sub: 'Einzelne Fähigkeiten üben - oder eine von acht Übungsformen: Satzbau-Puzzle, Fehlersuche, Diktat, Brief-Baukasten, Dialog, Blitzrunde, Nachsprechen, Monolog.' },
     {
       id: 'vocab', icon: '📚', title: 'Vokabeln',
       sub: dueCount != null && dueCount > 0 ? <Text fontWeight="$bold">{dueCount} Wörter fällig – jetzt wiederholen!</Text> : 'B1-Wortschatz mit Spaced Repetition.',

@@ -616,6 +616,115 @@ export function PillInfo({ children }: { children: ReactNode }) {
   return <Muted mt="$0">{children}</Muted>
 }
 
+/** Zustände eines antippbaren Wort-Chips (Satzbau-Puzzle, Fehlersuche, Diktat-Auswertung). */
+export type WordChipTone = 'neutral' | 'selected' | 'correct' | 'wrong' | 'warn' | 'muted'
+
+const CHIP_TONES: Record<WordChipTone, { bg: string; fg: string; border: string }> = {
+  neutral: { bg: COLORS.$backgroundLight0, fg: COLORS.$textLight600, border: COLORS.$borderLight200 },
+  selected: { bg: COLORS.$primary50, fg: COLORS.$primary700, border: COLORS.$primary600 },
+  correct: { bg: COLORS.$success50, fg: COLORS.$success800, border: COLORS.$success400 },
+  wrong: { bg: COLORS.$error50, fg: COLORS.$error800, border: COLORS.$error400 },
+  warn: { bg: COLORS.$yellow50, fg: COLORS.$yellow900, border: COLORS.$yellow400 },
+  muted: { bg: COLORS.$backgroundLight50, fg: COLORS.$textLight500, border: COLORS.$borderLight200 },
+}
+
+/** Einzelnes Wort als antippbarer Chip. Ohne onPress ist es nur eine Anzeige
+    (z. B. in der Diktat-Auswertung), mit onPress ein Bedienelement. */
+export function WordChip({
+  children, tone = 'neutral', onPress, strike = false, title,
+}: {
+  children: ReactNode
+  tone?: WordChipTone
+  onPress?: () => void
+  /** durchgestrichen - für überflüssige/falsche Wörter in der Auswertung */
+  strike?: boolean
+  title?: string
+}) {
+  const t = CHIP_TONES[tone]
+  const style: CSSProperties = {
+    backgroundColor: t.bg,
+    color: t.fg,
+    border: `1.5px solid ${t.border}`,
+    borderRadius: 8,
+    padding: '7px 11px',
+    fontSize: 15,
+    fontFamily: 'inherit',
+    lineHeight: 1.2,
+    textDecoration: strike ? 'line-through' : undefined,
+    cursor: onPress ? 'pointer' : 'default',
+    display: 'inline-block',
+  }
+  if (!onPress) {
+    return (
+      <span style={style} title={title}>
+        {children}
+      </span>
+    )
+  }
+  return (
+    <motion.button
+      type="button"
+      style={style}
+      title={title}
+      onClick={onPress}
+      whileTap={{ scale: 0.94 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+    >
+      {children}
+    </motion.button>
+  )
+}
+
+/** Zeile aus Wort-Chips mit Umbruch. */
+export function ChipRow({ children, minHeight }: { children: ReactNode; minHeight?: number }) {
+  return (
+    <div
+      style={{
+        display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-start',
+        minHeight, alignContent: 'flex-start',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Mehrzeiliges Eingabefeld im Stil der App (ersetzt die kopierten Inline-Styles). */
+export function TextArea({
+  value, onChange, placeholder, minHeight = 90, disabled = false, autoFocus = false,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  minHeight?: number
+  disabled?: boolean
+  autoFocus?: boolean
+}) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      autoFocus={autoFocus}
+      style={{
+        width: '100%', minHeight, border: `1.5px solid ${COLORS.$borderLight200}`, borderRadius: 10,
+        padding: 12, fontSize: 15, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box',
+        opacity: disabled ? 0.6 : 1,
+      }}
+    />
+  )
+}
+
+/** Großer Countdown für Blitzrunde und Monolog. */
+export function TimerDisplay({ seconds, warn = false }: { seconds: number; warn?: boolean }) {
+  return (
+    <Text fontSize={38} fontWeight="$extrabold" color={warn ? '$error600' : '$primary600'}>
+      {seconds}s
+    </Text>
+  )
+}
+
 /** Aufklappbarer Bereich (z. B. Musterlösungen): Radix Collapsible für die
     Zugänglichkeit, Motion für die sanfte Höhen-Animation. */
 export function Reveal({ label, children }: { label: ReactNode; children: ReactNode }) {

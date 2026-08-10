@@ -15,11 +15,13 @@ import { TRAINING_SKILLS } from '../data/training'
 import { TRAINING_METHODS } from '../data/methods'
 import type { TrainingExercise, TrainingSkill, TrainingMethod, MethodExercise, MethodKind } from '../data/types'
 import {
-  db, saveGeneratedTrainingExercise, saveGeneratedMethodExercise,
-  type GeneratedTrainingRecord, type GeneratedMethodRecord, type DrillRecord,
+  db, saveGeneratedTrainingExercise, saveGeneratedMethodExercise, logDrill,
+  type GeneratedTrainingRecord, type GeneratedMethodRecord,
 } from '../db'
+import { useDrillStatus, type DrillStatus } from '../hooks/useDrillStatus'
 import { generateTrainingExercise } from '../ai/generateTrainingExercise'
 import { generateMethodExercise, canGenerate } from '../ai/generateMethodExercise'
+import { ExerciseProgress, ExerciseBadge } from './training/ExerciseProgress'
 import { SpeakPractice } from './SpeakPractice'
 import { TranslateZone } from './useWordTranslate'
 import { WritingDrill } from './training/WritingDrill'
@@ -163,6 +165,7 @@ function SkillView({
 }) {
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
+  const status = useDrillStatus(skill.id)
 
   const generatedForSkill = useLiveQuery<GeneratedTrainingRecord[], GeneratedTrainingRecord[]>(
     () => db.trainingGenerated.where('skillId').equals(skill.id).sortBy('createdAt'),
@@ -204,6 +207,7 @@ function SkillView({
       <Box mb="$3">
         <Muted>{skill.focus}</Muted>
       </Box>
+      <ExerciseProgress scopeId={skill.id} done={status.doneCount} attempted={status.attemptedCount} total={pool.length} />
       <TileGrid>
         <Tile onPress={generating ? undefined : generate} disabled={generating}>
           <TileEmoji>🤖</TileEmoji>
@@ -213,10 +217,13 @@ function SkillView({
         {pool.map((ex, i) => (
           <Tile key={ex.id} onPress={() => openExercise(i)}>
             <TileTitle>
-              Übung {i + 1}
+              {status.byExercise.get(ex.id)?.done ? '✅ ' : ''}Übung {i + 1}
               {ex.id.startsWith('ai-') && ' 🤖'}
             </TileTitle>
             <Muted>{ex.prompt.length > 80 ? ex.prompt.slice(0, 80) + '…' : ex.prompt}</Muted>
+            <Box mt="$1">
+              <ExerciseBadge status={status.byExercise.get(ex.id)} />
+            </Box>
           </Tile>
         ))}
       </TileGrid>
@@ -250,9 +257,13 @@ function SkillExerciseView({ skill, exercise }: { skill: TrainingSkill; exercise
         )}
 
         {skill.mode === 'speak' ? (
-          <SpeakPractice context={buildSpeakContext(skill, exercise)} criteria={skill.criteria} />
+          <SpeakPractice
+            context={buildSpeakContext(skill, exercise)}
+            criteria={skill.criteria}
+            onScored={(ok) => void logDrill({ methodId: skill.id, exerciseId: exercise.id, ok })}
+          />
         ) : (
-          <WritingDrill exercise={exercise} criteria={skill.criteria} />
+          <WritingDrill exercise={exercise} criteria={skill.criteria} skillId={skill.id} />
         )}
 
         <Box mt="$3">
@@ -325,6 +336,7 @@ function MethodView({
 }) {
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
+  const status = useDrillStatus(method.id)
 
   const generated = useLiveQuery<GeneratedMethodRecord[], GeneratedMethodRecord[]>(
     () => db.methodGenerated.where('methodId').equals(method.id).sortBy('createdAt'),
@@ -375,7 +387,8 @@ function MethodView({
           </Text>
         </Box>
       )}
-      <MethodProgress methodId={method.id} />
+      <ExerciseProgress scopeId={method.id} done={status.doneCount} attempted={status.attemptedCount} total={pool.length} />
+      <MethodStats methodId={method.id} status={status} />
       <TileGrid>
         {canGenerate(method.id) && (
           <Tile onPress={generating ? undefined : generate} disabled={generating}>
@@ -387,10 +400,14 @@ function MethodView({
         {pool.map((ex, i) => (
           <Tile key={ex.id} onPress={() => openExercise(i)}>
             <TileTitle>
+              {status.byExercise.get(ex.id)?.done ? '✅ ' : ''}
               {exerciseTitle(ex, i)}
               {ex.id.startsWith('ai-') && ' 🤖'}
             </TileTitle>
             <Muted>{truncate(exerciseLabel(ex), 90)}</Muted>
+            <Box mt="$1">
+              <ExerciseBadge status={status.byExercise.get(ex.id)} />
+            </Box>
           </Tile>
         ))}
       </TileGrid>
@@ -403,29 +420,25 @@ function MethodView({
   )
 }
 
-/** Kurze Rückmeldung über die letzten Versuche in dieser Übungsform. Wird erst
-    ab drei Versuchen eingeblendet - vorher ist eine Quote nicht aussagekräftig
-    und würde nach einem Fehlstart nur entmutigen. */
-function MethodProgress({ methodId }: { methodId: MethodKind }) {
-  const recent = useLiveQuery<DrillRecord[], DrillRecord[]>(
-    () => db.drills.where('methodId').equals(methodId).reverse().limit(20).toArray(),
-    [methodId],
-    []
-  )
+/** Zusätzliche Kennzahl für die Übungsformen, die eine sinnvolle Messgröße
+    protokollieren. Wird erst ab drei Versuchen eingeblendet - vorher ist ein
+    Durchschnitt nicht aussagekräftig. */
+function MethodStats({ methodId, status }: { methodId: MethodKind; status: DrillStatus }) {
+  const values = status.rows.slice(0, 20).filter((d) => typeof d.value === 'number').map((d) => d.value as number)
+  if (values.length < 3) return null
 
-  if (recent.length < 3) return null
-
-  const ok = recent.filter((d) => d.ok).length
-  const values = recent.filter((d) => typeof d.value === 'number').map((d) => d.value as number)
-  const avg = values.length > 0 ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null
+  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+  const label =
+    methodId === 'monologue'
+      ? `📈 Im Schnitt ${avg} Wörter pro Minute über die letzten ${values.length} Versuche.`
+      : methodId === 'dictation' || methodId === 'shadowing'
+        ? `📈 Im Schnitt ${avg} % richtig über die letzten ${values.length} Versuche.`
+        : null
+  if (!label) return null
 
   return (
     <Box bg="$backgroundLight50" borderRadius="$md" p="$3" mb="$3">
-      <Text size="sm">
-        📈 Deine letzten {recent.length} Versuche: <Text size="sm" fontWeight="$bold">{ok} gut gelöst</Text>
-        {avg !== null && methodId === 'monologue' && ` · im Schnitt ${avg} Wörter/Minute`}
-        {avg !== null && (methodId === 'dictation' || methodId === 'shadowing') && ` · im Schnitt ${avg} % Treffer`}
-      </Text>
+      <Text size="sm">{label}</Text>
     </Box>
   )
 }

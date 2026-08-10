@@ -9,11 +9,11 @@
    Für die Schlussbewertung wird die Übung lokal in die Form eines Teil4Task
    gebracht (situation / points / model), sodass scoreWriting() unverändert
    weiterverwendet werden kann. */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { LetterBuilderExercise, Teil4Task } from '../../data/types'
 import { checkTrainingAnswer, type TrainingCheckResult } from '../../ai/checkTrainingAnswer'
 import { scoreWriting, type WritingScore } from '../../ai/scoreWriting'
-import { logDrill } from '../../db'
+import { logDrill, updateDrill } from '../../db'
 import {
   Box, HStack, VStack, Text, Muted, Btn, TextArea, ProgressBar, SituationBox, Reveal, ScoreBox,
 } from '../ui/kit'
@@ -46,10 +46,26 @@ export function LetterBuilder({ exercise }: { exercise: LetterBuilderExercise })
   const [finalScore, setFinalScore] = useState<WritingScore | null>(null)
   const [scoring, setScoring] = useState(false)
   const [copied, setCopied] = useState(false)
+  // Sobald alle Bausteine geschrieben sind, gilt die Übung als gemacht; die
+  // Punktbewertung ergänzt später denselben Datensatz.
+  const drillIdRef = useRef<number | undefined>(undefined)
 
   const done = step >= exercise.blocks.length
   const block = done ? null : exercise.blocks[step]
   const letter = assemble(exercise, texts)
+
+  // Brief vollständig -> einmalig als Versuch protokollieren.
+  useEffect(() => {
+    if (!done || drillIdRef.current !== undefined) return
+    void logDrill({
+      methodId: 'letterbuilder',
+      exerciseId: exercise.id,
+      ok: false,
+      detail: 'Brief fertiggestellt',
+    }).then((id) => {
+      drillIdRef.current = id
+    })
+  }, [done, exercise.id])
 
   useEffect(() => {
     if (!copied) return
@@ -96,9 +112,7 @@ export function LetterBuilder({ exercise }: { exercise: LetterBuilderExercise })
     try {
       const result = await scoreWriting({ data: { task: asTeil4Task(exercise), text: letter } })
       setFinalScore(result)
-      void logDrill({
-        methodId: 'letterbuilder',
-        exerciseId: exercise.id,
+      void updateDrill(drillIdRef.current, {
         ok: result.score >= 4,
         value: result.score,
         detail: `${result.score}/6 Punkte`,
@@ -116,6 +130,7 @@ export function LetterBuilder({ exercise }: { exercise: LetterBuilderExercise })
     setChecks({})
     setFinalScore(null)
     setError(null)
+    drillIdRef.current = undefined
   }
 
   return (

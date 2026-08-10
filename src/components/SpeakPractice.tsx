@@ -7,7 +7,15 @@ import { blobToWavBase64 } from '../ai/audioWav'
 import { useVoiceCapture } from './useVoiceCapture'
 import { Box, HStack, VStack, Text, Btn, Muted } from './ui/kit'
 
-export function SpeakPractice({ context, criteria }: { context: string; criteria: string[] }) {
+export function SpeakPractice({
+  context, criteria, onScored,
+}: {
+  context: string
+  criteria: string[]
+  /** Wird nach einer erfolgreichen Bewertung aufgerufen - z. B. um im gezielten
+      Training das Erledigt-Häkchen zu setzen. */
+  onScored?: (ok: boolean) => void
+}) {
   const cap = useVoiceCapture()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<SpeakingScore | null>(null)
@@ -50,6 +58,8 @@ export function SpeakPractice({ context, criteria }: { context: string; criteria
           setStatus(isFallback ? 'Weiche auf ein schnelleres Modell aus …' : attempt > 1 ? `Versuch ${attempt} …` : ''),
       })
       setResult(r)
+      // "Gelöst" heißt hier: die Mehrheit der Kriterien ist erfüllt.
+      onScored?.(r.checks.filter((c) => c.ok).length >= Math.ceil(criteria.length / 2))
       if (!cap.transcript.trim() && r.transcript) cap.setTranscript(r.transcript)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Das Feedback ist fehlgeschlagen.')

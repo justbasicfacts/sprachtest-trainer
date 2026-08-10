@@ -13,7 +13,7 @@ import { roleplayTurn } from '../../ai/roleplayTurn'
 import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { useSpeech } from '../../hooks/useSpeech'
 import { useVoiceCapture } from '../useVoiceCapture'
-import { logDrill } from '../../db'
+import { logDrill, updateDrill } from '../../db'
 import { Box, HStack, VStack, Text, Muted, Btn, TextArea, SituationBox } from '../ui/kit'
 
 interface Message {
@@ -35,6 +35,22 @@ export function Roleplay({ exercise }: { exercise: RoleplayExercise }) {
   const [scoring, setScoring] = useState(false)
   const [autoSpeak, setAutoSpeak] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
+  // Beim Beenden des Gesprächs wird der Versuch protokolliert; eine spätere
+  // KI-Auswertung ergänzt denselben Datensatz statt einen zweiten anzulegen.
+  const drillIdRef = useRef<number | undefined>(undefined)
+
+  const endConversation = (turnCount: number) => {
+    setFinished(true)
+    if (drillIdRef.current !== undefined) return
+    void logDrill({
+      methodId: 'roleplay',
+      exerciseId: exercise.id,
+      ok: false,
+      detail: `${turnCount} Redebeiträge`,
+    }).then((id) => {
+      drillIdRef.current = id
+    })
+  }
 
   // Sobald ein Zug dazukommt, ans Ende scrollen - sonst muss man auf dem Handy
   // nach jedem Beitrag selbst nachscrollen.
@@ -72,7 +88,7 @@ export function Roleplay({ exercise }: { exercise: RoleplayExercise }) {
       setMessages((m) => [...m, { from: 'partner', text: result.reply, nudge: result.nudge || undefined }])
       setTurns((t) => t + 1)
       if (autoSpeak && speech.hasGermanVoice) void speech.speak(result.reply)
-      if (result.done || lastTurn) setFinished(true)
+      if (result.done || lastTurn) endConversation(turns + 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Die Antwort ist fehlgeschlagen.')
       // Den eigenen Beitrag zurück ins Feld, damit nichts verloren geht.
@@ -101,9 +117,7 @@ export function Roleplay({ exercise }: { exercise: RoleplayExercise }) {
         },
       })
       setScore(result)
-      void logDrill({
-        methodId: 'roleplay',
-        exerciseId: exercise.id,
+      void updateDrill(drillIdRef.current, {
         ok: result.checks.filter((c) => c.ok).length >= Math.ceil(exercise.criteria.length / 2),
         value: turns,
         detail: `${turns} Redebeiträge`,
@@ -122,6 +136,7 @@ export function Roleplay({ exercise }: { exercise: RoleplayExercise }) {
     setDraft('')
     setTurns(0)
     setFinished(false)
+    drillIdRef.current = undefined
     setScore(null)
     setError(null)
   }
@@ -192,7 +207,7 @@ export function Roleplay({ exercise }: { exercise: RoleplayExercise }) {
             <Btn variant="gold" onPress={send} disabled={thinking || draft.trim().length < 2}>
               {thinking ? 'Antwort kommt …' : lastTurn ? '➤ Letzter Beitrag' : '➤ Absenden'}
             </Btn>
-            <Btn variant="secondary" small onPress={() => setFinished(true)} disabled={thinking || turns === 0}>
+            <Btn variant="secondary" small onPress={() => endConversation(turns)} disabled={thinking || turns === 0}>
               Gespräch beenden
             </Btn>
           </HStack>

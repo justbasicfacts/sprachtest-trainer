@@ -8,13 +8,26 @@ import { useState } from 'react'
 import type { TrainingExercise } from '../../data/types'
 import { normalizeSentence } from '../../lib/wordDiff'
 import { checkTrainingAnswer, type TrainingCheckResult } from '../../ai/checkTrainingAnswer'
+import { logDrill } from '../../db'
 import { Box, HStack, VStack, Text, Muted, Btn, FootActions, TextArea } from '../ui/kit'
 
-export function WritingDrill({ exercise, criteria }: { exercise: TrainingExercise; criteria: string[] }) {
+export function WritingDrill({
+  exercise, criteria, skillId,
+}: {
+  exercise: TrainingExercise
+  criteria: string[]
+  /** Fähigkeit, zu der die Übung gehört - für das Erledigt-Häkchen in der Liste */
+  skillId?: string
+}) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<TrainingCheckResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const finish = (r: TrainingCheckResult) => {
+    setResult(r)
+    if (skillId) void logDrill({ methodId: skillId, exerciseId: exercise.id, ok: r.ok, detail: text })
+  }
 
   const run = async () => {
     setError(null)
@@ -22,13 +35,13 @@ export function WritingDrill({ exercise, criteria }: { exercise: TrainingExercis
     // Schneller lokaler Abgleich: entspricht die Antwort (bis auf Kleinigkeiten wie
     // Anführungszeichen/Satzzeichen) der Musterlösung, brauchen wir die KI gar nicht.
     if (normalizeSentence(text) === normalizeSentence(exercise.sampleAnswer)) {
-      setResult({ ok: true, feedback: 'Genau richtig - das entspricht der Musterlösung!', corrected: text })
+      finish({ ok: true, feedback: 'Genau richtig - das entspricht der Musterlösung!', corrected: text })
       return
     }
 
     setLoading(true)
     try {
-      setResult(
+      finish(
         await checkTrainingAnswer({
           data: { instruction: exercise.instruction, prompt: exercise.prompt, hint: exercise.hint, answer: text },
         })

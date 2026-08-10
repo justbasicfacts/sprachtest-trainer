@@ -3,14 +3,14 @@
    Die lokalen Kennzahlen (Wörter, Wörter/Minute, Füllwörter) werden VOR dem
    KI-Aufruf berechnet und mitgeschickt. Damit ist das Feedback an echten
    Messwerten verankert, statt dass das Modell Tempo und Pausen schätzt. */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { MonologueExercise } from '../../data/types'
 import { countFillers, splitWords } from '../../lib/wordDiff'
 import { useCountdown } from '../../hooks/useCountdown'
 import { useVoiceCapture } from '../useVoiceCapture'
 import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
 import { blobToWavBase64 } from '../../ai/audioWav'
-import { logDrill } from '../../db'
+import { logDrill, updateDrill } from '../../db'
 import {
   Box, HStack, VStack, Text, Muted, Btn, ProgressBar, ScoreBox, TimerDisplay, TextArea,
 } from '../ui/kit'
@@ -24,11 +24,22 @@ export function Monologue({ exercise }: { exercise: MonologueExercise }) {
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState('')
 
-  const timer = useCountdown(exercise.seconds, () => {
+  // Id des Versuchs, der beim Beenden protokolliert wird - die spätere
+  // KI-Auswertung ergänzt denselben Datensatz, statt einen zweiten anzulegen.
+  const drillIdRef = useRef<number | undefined>(undefined)
+
+  const finishRun = (seconds: number) => {
     cap.stop()
-    setSpokenSeconds(exercise.seconds)
+    setSpokenSeconds(seconds)
     setPhase('done')
-  })
+    void logDrill({ methodId: 'monologue', exerciseId: exercise.id, ok: false, detail: `${seconds}s gesprochen` }).then(
+      (id) => {
+        drillIdRef.current = id
+      }
+    )
+  }
+
+  const timer = useCountdown(exercise.seconds, () => finishRun(exercise.seconds))
 
   const start = async () => {
     cap.reset()
@@ -40,10 +51,8 @@ export function Monologue({ exercise }: { exercise: MonologueExercise }) {
   }
 
   const stopEarly = () => {
-    setSpokenSeconds(timer.elapsed)
     timer.stop()
-    cap.stop()
-    setPhase('done')
+    finishRun(timer.elapsed)
   }
 
   const words = splitWords(cap.transcript).length
@@ -80,9 +89,7 @@ export function Monologue({ exercise }: { exercise: MonologueExercise }) {
           setStatus(isFallback ? 'Weiche auf ein schnelleres Modell aus …' : attempt > 1 ? `Versuch ${attempt} …` : ''),
       })
       setScore(result)
-      void logDrill({
-        methodId: 'monologue',
-        exerciseId: exercise.id,
+      void updateDrill(drillIdRef.current, {
         ok: result.checks.filter((c) => c.ok).length >= exercise.mustMention.length,
         value: wpm,
         detail: `${words} Wörter in ${seconds}s, ${fillers} Füllwörter`,

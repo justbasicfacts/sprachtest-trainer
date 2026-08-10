@@ -63,7 +63,11 @@ export interface GeneratedMethodRecord {
     Prüfungsergebnisse auf der Startseite nicht mit Übungsversuchen vermischt werden. */
 export interface DrillRecord {
   id?: number
-  methodId: MethodKind
+  /** Wozu der Versuch gehört: eine Übungsform (MethodKind wie 'wordorder') ODER
+      die Id einer Fähigkeit aus data/training.ts (z. B. 'praepositionen').
+      Beide Achsen teilen sich diesen Store, damit die Erledigt-Häkchen überall
+      gleich funktionieren; die Id-Räume überschneiden sich nicht. */
+  methodId: string
   exerciseId: string
   /** Richtig gelöst? Bei Sprechübungen: Auswertung erfolgreich abgeschlossen. */
   ok: boolean
@@ -134,12 +138,33 @@ export async function saveGeneratedMethodExercise(methodId: MethodKind, exercise
 
 /** Protokolliert einen Übungsversuch. Bewusst "fire and forget": Ein Fehler beim
     Schreiben (z. B. privater Modus ohne IndexedDB) darf die Übung nie unterbrechen. */
-export async function logDrill(entry: Omit<DrillRecord, 'id' | 'ts'>): Promise<void> {
+export async function logDrill(entry: Omit<DrillRecord, 'id' | 'ts'>): Promise<number | undefined> {
   try {
-    await db.drills.add({ ...entry, ts: Date.now() })
+    return await db.drills.add({ ...entry, ts: Date.now() })
   } catch (err) {
     console.warn('[db] Übungsversuch konnte nicht gespeichert werden:', err)
+    return undefined
   }
+}
+
+/** Ergänzt einen schon protokollierten Versuch, statt einen zweiten anzulegen.
+
+    Gebraucht bei den Übungsformen, die aus zwei Schritten bestehen: erst wird die
+    Übung beendet (Runde durch, Brief fertig, Gespräch beendet), danach optional
+    die KI-Auswertung geholt. Ohne dieses Nachtragen würde ein Durchgang als zwei
+    Versuche gezählt. */
+export async function updateDrill(id: number | undefined, patch: Partial<DrillRecord>): Promise<void> {
+  if (id === undefined) return
+  try {
+    await db.drills.update(id, patch)
+  } catch (err) {
+    console.warn('[db] Übungsversuch konnte nicht aktualisiert werden:', err)
+  }
+}
+
+/** Löscht den Übungsfortschritt einer Fähigkeit oder Übungsform (die Häkchen). */
+export async function resetDrills(scopeId: string): Promise<void> {
+  await db.drills.where('methodId').equals(scopeId).delete()
 }
 
 /** Seed the vocab table on first run (guarded against double-invocation, e.g. React StrictMode) */

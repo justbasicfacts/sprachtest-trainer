@@ -11,7 +11,7 @@ import type { BlitzExercise } from '../../data/types'
 import { useCountdown } from '../../hooks/useCountdown'
 import { useVoiceCapture } from '../useVoiceCapture'
 import { scoreSpeaking, type SpeakingScore } from '../../ai/scoreSpeaking'
-import { logDrill } from '../../db'
+import { logDrill, updateDrill } from '../../db'
 import { Box, HStack, VStack, Text, Muted, Btn, ProgressBar, TimerDisplay } from '../ui/kit'
 
 /** So viele Fragen umfasst eine Runde - aus dem Fragenpool zufällig gezogen. */
@@ -47,6 +47,24 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
   // ist die Antwort auf genau diese Frage.
   const markRef = useRef(0)
   const idxRef = useRef(0)
+  const answersRef = useRef<string[]>([])
+  // Der Versuch wird am Ende der Runde protokolliert; eine spätere KI-Auswertung
+  // ergänzt denselben Datensatz, damit ein Durchgang nicht doppelt zählt.
+  const drillIdRef = useRef<number | undefined>(undefined)
+
+  const endRound = (finalAnswers: string[]) => {
+    cap.stop()
+    setPhase('done')
+    const answered = finalAnswers.filter((a) => a.trim().length > 0).length
+    void logDrill({
+      methodId: 'blitz',
+      exerciseId: exercise.id,
+      ok: false,
+      detail: `${answered}/${questions.length} beantwortet`,
+    }).then((id) => {
+      drillIdRef.current = id
+    })
+  }
 
   const timer = useCountdown(exercise.seconds, () => nextQuestion())
 
@@ -56,12 +74,14 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
     const full = cap.transcriptRef.current
     const answer = full.slice(markRef.current).trim()
     markRef.current = full.length
-    setAnswers((a) => [...a, answer])
+    // Parallel in einer Ref mitführen: Der State-Updater läuft erst beim nächsten
+    // Rendern, endRound() braucht die vollständige Liste aber sofort.
+    answersRef.current = [...answersRef.current, answer]
+    setAnswers(answersRef.current)
 
     const next = idxRef.current + 1
     if (next >= questions.length) {
-      cap.stop()
-      setPhase('done')
+      endRound(answersRef.current)
       return
     }
     idxRef.current = next
@@ -71,11 +91,13 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
 
   const startRound = async () => {
     cap.reset()
+    answersRef.current = []
     setAnswers([])
     setScore(null)
     setError(null)
     markRef.current = 0
     idxRef.current = 0
+    drillIdRef.current = undefined
     setIdx(0)
     setPhase('running')
     await cap.start()
@@ -84,8 +106,7 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
 
   const abort = () => {
     timer.stop()
-    cap.stop()
-    setPhase('done')
+    endRound(answersRef.current)
   }
 
   const evaluate = async () => {
@@ -106,9 +127,7 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
         },
       })
       setScore(result)
-      void logDrill({
-        methodId: 'blitz',
-        exerciseId: exercise.id,
+      void updateDrill(drillIdRef.current, {
         ok: result.checks.filter((c) => c.ok).length >= 3,
         value: answers.filter((a) => a.trim().length > 0).length,
         detail: `${answers.filter((a) => a.trim()).length}/${questions.length} beantwortet`,
@@ -124,6 +143,8 @@ export function BlitzRound({ exercise }: { exercise: BlitzExercise }) {
     setQuestions(pickQuestions(exercise.questions))
     cap.reset()
     timer.reset()
+    answersRef.current = []
+    drillIdRef.current = undefined
     setAnswers([])
     setScore(null)
     setError(null)

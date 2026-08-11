@@ -71,14 +71,18 @@ export default function App() {
 
   return (
     <Box flex={1} minHeight="$full" bg="$backgroundLight50">
+      {/* Kopfzeile: Bär + Titel nehmen eine Zeile, die Sprachauswahl rutscht auf
+          schmalen Displays per flex-wrap in die nächste Zeile. Ohne das quetscht
+          das Auswahlfeld den Titel so weit zusammen, dass jedes Wort einzeln
+          umbricht (auf einem 320px-Handy gut sichtbar). */}
       <Box bg="$primary600" px="$5" py="$3.5" sx={{ position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}>
-        <HStack alignItems="center" gap="$3.5">
+        <HStack alignItems="center" gap="$3.5" flexWrap="wrap" sx={{ rowGap: 8 }}>
           <Text fontSize={26}>🐻</Text>
-          <VStack flex={1}>
+          <VStack flex={1} sx={{ minWidth: 170 }}>
             <Heading size="sm" color="$white">
               Berliner Sprachtest für die Einbürgerung
             </Heading>
-            <Text size="2xs" color="$white" sx={{ opacity: 0.75 }}>
+            <Text size="2xs" color="$white" className="app-subtitle" sx={{ opacity: 0.75 }}>
               B1-Trainer · Lesen · Schreiben · Sprechen · Training · Vokabeln
             </Text>
           </VStack>

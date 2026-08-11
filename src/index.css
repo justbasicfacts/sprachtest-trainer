@@ -260,40 +260,75 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Google Website Translator: das Auswahlfeld in die Kopfzeile einpassen und das
-   Banner unterdrücken, das Google sonst über die Seite legt und den ganzen Body
-   nach unten schiebt (wodurch die sticky-Kopfzeile verrutscht).
+   Google Website Translator in die Kopfzeile einpassen.
 
-   ACHTUNG - hier lauert eine Falle: Google gibt MEHREREN eigenen iframes die
-   Klasse "skiptranslate" - dem Banner UND dem Sprachmenü. Ein pauschales
-   `.skiptranslate iframe { display: none }` blendet deshalb auch die
-   Sprachauswahl aus: Der Umschalter ist dann sichtbar, öffnet aber nichts.
-   Deswegen wird hier ausschließlich das Banner adressiert.
+   Drei Dinge müssen hier passieren:
+
+   1. NUR das Banner ausblenden. Google gibt mehreren eigenen iframes die Klasse
+      "skiptranslate" - dem Banner UND dem Sprachmenü. Ein pauschales
+      `.skiptranslate iframe { display:none }` blendet deshalb auch die
+      Sprachauswahl aus: Der Umschalter ist sichtbar, öffnet aber nichts.
+   2. Die "Powered by Google Translate"-Zeile entfernen. Der Text selbst ist ein
+      nackter Textknoten im Gadget (den erwischt font-size:0), das bunte Logo
+      steckt aber in .goog-logo-link mit eigener Schriftgröße und muss getrennt
+      ausgeblendet werden - sonst ragt es aus der Kopfzeile heraus.
+   3. Die Breite begrenzen. Googles Gadget bringt eine eigene Mindestbreite mit;
+      ohne Deckel quetscht es auf einem schmalen Handy den Titel so weit
+      zusammen, dass jedes Wort einzeln umbricht.
    --------------------------------------------------------------------------- */
 
 .lang-select {
   flex: 0 0 auto;
+  margin-left: auto; /* nach dem Umbruch rechts stehen bleiben */
 }
 
-/* "Powered by Google Translate" ausblenden - das <select> selbst bekommt seine
-   Schriftgröße unten wieder zurück. */
+/* "Powered by"-Text unsichtbar machen ... */
 .lang-select .goog-te-gadget {
   font-size: 0 !important;
   line-height: 1;
   color: transparent;
+  white-space: nowrap;
+}
+
+/* ... und das bunte Google-Logo daneben ganz entfernen. */
+.lang-select .goog-logo-link,
+.lang-select .goog-logo-link-wrapper,
+.lang-select .goog-te-gadget img,
+.lang-select .goog-te-gadget > span {
+  display: none !important;
 }
 
 /* Das eigentliche Auswahlfeld an die dunkle Kopfzeile anpassen */
 .lang-select .goog-te-combo {
+  display: block;
   margin: 0 !important;
-  padding: 5px 8px;
+  padding: 6px 8px;
   font-size: 13px;
+  line-height: 1.2;
   font-family: inherit;
   color: #1d4e89;
   background: #fff;
-  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
   border-radius: 8px;
-  max-width: 150px;
+  width: 148px;
+  max-width: 40vw;
+}
+
+@media (max-width: 480px) {
+  /* Untertitel weicht - auf einem 320px-Display ist er ohnehin nur Zierrat und
+     kostet die Zeile, die Titel und Auswahlfeld brauchen. */
+  .app-subtitle {
+    display: none !important;
+  }
+  .lang-select .goog-te-combo {
+    width: 100%;
+    max-width: none;
+    font-size: 14px; /* iOS zoomt bei < 16px beim Fokus - 14px ist der Kompromiss */
+  }
+  .lang-select {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 /* NUR das Banner ausblenden - nicht jedes skiptranslate-iframe. */

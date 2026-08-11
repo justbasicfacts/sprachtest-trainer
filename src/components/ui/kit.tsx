@@ -207,11 +207,13 @@ export interface TextProps extends StyleProps {
   fontWeight?: string
   color?: string
   onPress?: () => void
+  /** Zusätzliche CSS-Klasse - für Regeln, die nur per Media Query greifen. */
+  className?: string
 }
 
 /** Text-Ersatz: block-level, aber inline wenn in anderem Text verschachtelt
     (via .kit-text-Regeln in index.css). {'\n'} erzeugt Zeilenumbrüche (pre-line). */
-export function Text({ children, size, fontSize, fontWeight, color: c, onPress, ...rest }: TextProps) {
+export function Text({ children, size, fontSize, fontWeight, color: c, onPress, className, ...rest }: TextProps) {
   const s: CSSProperties = toStyle(rest)
   if (size !== undefined) {
     s.fontSize = FONT_SIZES[size] ?? 16
@@ -222,7 +224,7 @@ export function Text({ children, size, fontSize, fontWeight, color: c, onPress, 
   if (c !== undefined) s.color = color(c)
   if (onPress) s.cursor = 'pointer'
   return (
-    <span className="kit-text" style={s} onClick={onPress}>
+    <span className={className ? `kit-text ${className}` : 'kit-text'} style={s} onClick={onPress}>
       {children}
     </span>
   )

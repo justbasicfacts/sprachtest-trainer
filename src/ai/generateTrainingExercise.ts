@@ -1,9 +1,14 @@
-/* Erstellt per Gemini eine neue Übung zu einer Trainings-Fähigkeit (gezieltes
-   Training), im gleichen Format wie die statischen Übungen in data/training.ts.
-   Läuft direkt im Browser, gleiche Aufruf-Signatur wie die anderen ai/*-Funktionen. */
+/* Erstellt (und evolviert) per KI eine neue Übung zu einer Trainings-Fähigkeit
+   (gezieltes Training), im gleichen Format wie die statischen Übungen in
+   data/training.ts. Läuft direkt im Browser, gleiche Aufruf-Signatur wie die
+   anderen ai/*-Funktionen.
+
+   Welcher KI-Anbieter (Gemini oder DeepSeek) antwortet, entscheidet aiJson()
+   (aiProvider.ts) anhand der Einstellung oben in der App. */
 import { z } from 'zod'
 import type { TrainingExercise, TrainingSkill } from '../data/types'
-import { geminiJson, type GeminiSchema } from './geminiClient'
+import { type GeminiSchema } from './geminiClient'
+import { aiJson } from './aiProvider'
 
 const ExerciseSchema = z.object({
   instruction: z.string(),
@@ -52,9 +57,37 @@ export async function generateTrainingExercise(skill: TrainingSkill): Promise<Tr
     '\nErstelle EINE neue Übung zu genau dieser Fähigkeit, im gleichen Format wie die vorhandenen: eine kurze ' +
     'Anweisung, eine konkrete Aufgabe, optional eine Formulierungshilfe und eine vollständige Musterlösung.'
 
-  const result = await geminiJson({
-    model: 'gemini-3.5-flash',
-    fallbackModel: 'gemini-3.1-flash-lite',
+  const result = await aiJson({
+    timeoutMs: 60_000,
+    thinkingLevel: 'MEDIUM',
+    system: SYSTEM_PROMPT,
+    user,
+    responseSchema: RESPONSE_SCHEMA,
+    zodSchema: ExerciseSchema,
+  })
+
+  return { id: `ai-${crypto.randomUUID()}`, ...result }
+}
+
+/** Evolviert eine bestehende Übung derselben Fähigkeit in eine neue, spürbar
+    schwierigere Variante - reuse desselben Schemas/Prompts wie
+    generateTrainingExercise(), nur mit einem Bezug auf die Ausgangsübung. */
+export async function evolveTrainingExercise(existing: TrainingExercise, skill: TrainingSkill): Promise<TrainingExercise> {
+  const user =
+    `Fähigkeit: "${skill.title}"\n` +
+    `Worum es geht: ${skill.focus}\n` +
+    `Übungsform: ${skill.mode === 'speak' ? 'Der Lernende spricht die Antwort (Mikrofon)' : 'Der Lernende schreibt die Antwort'}\n\n` +
+    'Hier ist eine existierende Übung zu genau dieser Fähigkeit:\n' +
+    `Anweisung: ${existing.instruction}\n` +
+    `Aufgabe: ${existing.prompt}\n` +
+    (existing.hint ? `Formulierungshilfe: ${existing.hint}\n` : '') +
+    `Musterlösung: ${existing.sampleAnswer}\n\n` +
+    'Erstelle daraus eine EVOLVIERTE, neue Version: gleiche Fähigkeit, gleiches Format, aber spürbar ' +
+    'schwieriger - ein komplexeres oder ungewöhnlicheres konkretes Beispiel, feinere sprachliche ' +
+    'Unterscheidung (innerhalb von B1). Keine triviale Umformulierung des Originals; Thema und Details ' +
+    'müssen neu sein.'
+
+  const result = await aiJson({
     timeoutMs: 60_000,
     thinkingLevel: 'MEDIUM',
     system: SYSTEM_PROMPT,

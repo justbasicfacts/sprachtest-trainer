@@ -1,7 +1,11 @@
-/* Erstellt per Google Gemini (kostenloser Free-Tier) eine neue Übungsaufgabe für
-   Teil 1-4, im gleichen Format wie die statischen Aufgaben in data/content.ts.
-   Läuft direkt im Browser (statisches Hosting ohne Server); gleiche Aufruf-Signatur
-   wie die frühere Serverfunktion: generateTask({ data: { part } }). */
+/* Erstellt (und evolviert) per KI eine neue Übungsaufgabe für Teil 1-4, im
+   gleichen Format wie die statischen Aufgaben in data/content.ts. Läuft direkt
+   im Browser (statisches Hosting ohne Server); gleiche Aufruf-Signatur wie die
+   frühere Serverfunktion: generateTask({ data: { part } }).
+
+   Welcher KI-Anbieter (Gemini oder DeepSeek) tatsächlich antwortet, entscheidet
+   aiJson() (aiProvider.ts) anhand der Einstellung oben in der App - dieses Modul
+   kümmert sich nur noch um Prompts und Schemas, nicht um Modellnamen. */
 import { z } from 'zod'
 import {
   GeneratedTeil1Schema,
@@ -10,7 +14,8 @@ import {
   GeneratedTeil4Schema,
 } from '../data/schemas'
 import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task } from '../data/types'
-import { geminiJson, type GeminiSchema } from './geminiClient'
+import { type GeminiSchema } from './geminiClient'
+import { aiJson } from './aiProvider'
 
 const GenerateTaskInput = z.object({
   part: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
@@ -57,13 +62,9 @@ erst beim vollständigen Lesen auffällt.
 
 Antworte ausschließlich auf Deutsch und exakt im vorgegebenen JSON-Schema.`
 
-const MODEL = 'gemini-3.5-flash'
-// Wenn das Hauptmodell überlastet ist (503), auf das leichtere Modell ausweichen -
-// etwas einfachere Aufgaben sind besser als gar keine.
-const FALLBACK_MODEL = 'gemini-3.1-flash-lite'
-
-/* Gemini-REST-Schemas, spiegelbildlich zu den zod-Schemas in data/schemas.ts
-   (die zod-Schemas validieren die Antwort anschließend). */
+/* Gemini-REST-Schemas, spiegelbildlich zu den zod-Schemas in data/schemas.ts (die
+   zod-Schemas validieren die Antwort anschließend) - für DeepSeek automatisch in
+   normales JSON-Schema umgewandelt, siehe jsonUtils.geminiSchemaToJsonSchema. */
 
 const AD_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
@@ -164,9 +165,7 @@ export async function generateTask(input: {
   const set = 'KI-generiert'
 
   if (data.part === 1) {
-    const result = await geminiJson({
-      model: MODEL,
-      fallbackModel: FALLBACK_MODEL,
+    const result = await aiJson({
       timeoutMs: 90_000, // HIGH-Thinking braucht mehr Zeit als die übliche Generierung
       thinkingLevel: 'HIGH', // Plausible, nicht-triviale Distraktoren erfinden braucht echtes Abwägen
       system: SYSTEM_PROMPT,
@@ -185,9 +184,7 @@ export async function generateTask(input: {
   }
 
   if (data.part === 2) {
-    const result = await geminiJson({
-      model: MODEL,
-      fallbackModel: FALLBACK_MODEL,
+    const result = await aiJson({
       timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
       thinkingLevel: 'MEDIUM',
       system: SYSTEM_PROMPT,
@@ -203,9 +200,7 @@ export async function generateTask(input: {
   }
 
   if (data.part === 3) {
-    const result = await geminiJson({
-      model: MODEL,
-      fallbackModel: FALLBACK_MODEL,
+    const result = await aiJson({
       timeoutMs: 90_000, // HIGH-Thinking braucht mehr Zeit als die übliche Generierung
       thinkingLevel: 'HIGH', // Plausible, nicht-triviale Distraktoren erfinden braucht echtes Abwägen
       system: SYSTEM_PROMPT,
@@ -221,9 +216,7 @@ export async function generateTask(input: {
     return { id, set, ...result }
   }
 
-  const result = await geminiJson({
-    model: MODEL,
-    fallbackModel: FALLBACK_MODEL,
+  const result = await aiJson({
     timeoutMs: 60_000, // Aufgaben-Generierung darf länger dauern
     thinkingLevel: 'MEDIUM',
     system: SYSTEM_PROMPT,
@@ -233,6 +226,111 @@ export async function generateTask(input: {
       'Arbeit kommen. Schreiben Sie eine Nachricht an Ihre Kollegin." Kein erfundener Name für die Testperson ' +
       'selbst, nur ggf. für die Person, an die geschrieben wird. Dazu genau 4 Punkte, die die Nachricht behandeln ' +
       'soll, und eine Musterlösung mit passender Anrede und Gruß.',
+    responseSchema: TEIL4_SCHEMA,
+    zodSchema: GeneratedTeil4Schema,
+  })
+  return { id, set, ...result }
+}
+
+/* ------------------------------- Evolution ------------------------------- */
+
+/** Baut den User-Prompt für eine Evolution: die bestehende Aufgabe als Text plus
+    die Anweisung, daraus eine neue, spürbar schwierigere Variante im gleichen
+    Schema zu machen - keine triviale Umformulierung, sondern ein neues Thema mit
+    subtileren Unterscheidungsmerkmalen. */
+function buildEvolveUser(kindDescription: string, existingText: string): string {
+  return (
+    `Hier ist eine existierende Aufgabe (${kindDescription}):\n\n${existingText}\n\n` +
+    'Erstelle daraus eine EVOLVIERTE, neue Version: gleiches Format und gleiches JSON-Schema, aber spürbar ' +
+    'schwieriger und inhaltlich neu - ein anderes konkretes Thema und andere Details, subtilere ' +
+    'Unterscheidungsmerkmale zwischen richtig und falsch, etwas komplexere Satzstrukturen (innerhalb von B1). ' +
+    'Keine triviale Umformulierung des Originals: Thema, Namen und Details müssen neu sein, nur die grundlegende ' +
+    'Herausforderung (welche Fähigkeit geprüft wird) bleibt gleich.'
+  )
+}
+
+function describeTeil1(t: Teil1Task): string {
+  const ads = t.ads.map((a, i) => `${'abc'[i]}) ${a.head} — ${a.body} — ${a.foot}`).join('\n')
+  return `Situation: ${t.situation}\nAnzeigen:\n${ads}\nRichtig: ${'abc'[t.correct]}\nErklärung: ${t.expl}`
+}
+
+function describeTeil2(t: Teil2Task): string {
+  const items = t.items.map((it, i) => `${'abcd'[i]}) ${it.s} (${it.a ? 'richtig' : 'falsch'}) — ${it.e}`).join('\n')
+  return `Titel: ${t.title}\nText: ${t.text}\nAussagen:\n${items}`
+}
+
+function describeTeil3(t: Teil3Task): string {
+  const options = t.options.map((o, i) => `${'abc'[i]}) ${o}`).join('\n')
+  return `Text: ${t.text}\nÜberschriften:\n${options}\nRichtig: ${'abc'[t.correct]}\nErklärung: ${t.expl}`
+}
+
+function describeTeil4(t: Teil4Task): string {
+  return `Situation: ${t.situation}\nPunkte: ${t.points.join(' / ')}\nMusterlösung: ${t.model}`
+}
+
+/** Evolviert eine bestehende Teil-1-4-Aufgabe (egal ob statisch oder KI-generiert)
+    in eine neue, schwierigere Variante im gleichen Format - reuse derselben
+    Schemas/Prompts wie generateTask(), nur mit einem anderen User-Prompt. */
+export async function evolveTask(
+  existing: Teil1Task | Teil2Task | Teil3Task | Teil4Task,
+  part: 1 | 2 | 3 | 4
+): Promise<Teil1Task | Teil2Task | Teil3Task | Teil4Task> {
+  const id = `ai-${crypto.randomUUID()}`
+  const set = 'KI-generiert (evolviert)'
+
+  if (part === 1) {
+    const result = await aiJson({
+      timeoutMs: 90_000,
+      thinkingLevel: 'HIGH',
+      system: SYSTEM_PROMPT,
+      user: buildEvolveUser(
+        'Teil 1: Situation + genau 3 Kleinanzeigen a/b/c, nur eine passt vollständig',
+        describeTeil1(existing as Teil1Task)
+      ),
+      responseSchema: TEIL1_SCHEMA,
+      zodSchema: GeneratedTeil1Schema,
+    })
+    return { id, set, ...result }
+  }
+
+  if (part === 2) {
+    const result = await aiJson({
+      timeoutMs: 60_000,
+      thinkingLevel: 'MEDIUM',
+      system: SYSTEM_PROMPT,
+      user: buildEvolveUser(
+        'Teil 2: Zeitungsartikel + genau 4 Richtig/Falsch-Aussagen',
+        describeTeil2(existing as Teil2Task)
+      ),
+      responseSchema: TEIL2_SCHEMA,
+      zodSchema: GeneratedTeil2Schema,
+    })
+    return { id, set, ...result }
+  }
+
+  if (part === 3) {
+    const result = await aiJson({
+      timeoutMs: 90_000,
+      thinkingLevel: 'HIGH',
+      system: SYSTEM_PROMPT,
+      user: buildEvolveUser(
+        'Teil 3: Sachtext + genau 3 mögliche Überschriften, nur eine passt',
+        describeTeil3(existing as Teil3Task)
+      ),
+      responseSchema: TEIL3_SCHEMA,
+      zodSchema: GeneratedTeil3Schema,
+    })
+    return { id, set, ...result }
+  }
+
+  const result = await aiJson({
+    timeoutMs: 60_000,
+    thinkingLevel: 'MEDIUM',
+    system: SYSTEM_PROMPT,
+    user: buildEvolveUser(
+      'Teil 4: Situation + genau 4 zu behandelnde Punkte + Musterlösung',
+      describeTeil4(existing as Teil4Task)
+    ),
     responseSchema: TEIL4_SCHEMA,
     zodSchema: GeneratedTeil4Schema,
   })

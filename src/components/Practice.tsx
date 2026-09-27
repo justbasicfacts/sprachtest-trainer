@@ -4,7 +4,7 @@ import { DATA } from '../data/content'
 import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task } from '../data/types'
 import { Teil1, Teil2, Teil3, Teil4Prompt, SelfAssess } from './Tasks'
 import { db, saveGeneratedTask, type GeneratedTaskRecord } from '../db'
-import { generateTask } from '../ai/generateTask'
+import { generateTask, evolveTask } from '../ai/generateTask'
 import { summarizePractice } from '../ai/summarizePractice'
 import { generateModelAnswerTeil4 } from '../ai/generateModelAnswers'
 import type { PracticeSummary } from '../data/schemas'
@@ -61,6 +61,8 @@ export default function Practice() {
   }
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
+  const [evolving, setEvolving] = useState(false)
+  const [evolveError, setEvolveError] = useState<string | null>(null)
 
   const generatedForPart = useLiveQuery<GeneratedTaskRecord[], GeneratedTaskRecord[]>(
     () => (part === null ? Promise.resolve([]) : db.generated.where('part').equals(part).sortBy('createdAt')),
@@ -105,6 +107,23 @@ export default function Practice() {
       setGenError(err instanceof Error ? err.message : 'Die Aufgabe konnte nicht erstellt werden.')
     } finally {
       setGenerating(false)
+    }
+  }
+
+  // Evolviert die gerade offene Aufgabe (egal ob Original oder KI-generiert) in eine neue,
+  // spürbar schwierigere Variante - landet wie eine frisch generierte Aufgabe am Ende des Pools.
+  const evolve = async (sourceIdx: number) => {
+    setEvolving(true)
+    setEvolveError(null)
+    resetSummary()
+    try {
+      const evolved = await evolveTask(pool[sourceIdx], part)
+      await saveGeneratedTask(part, evolved)
+      openTask(pool.length)
+    } catch (err) {
+      setEvolveError(err instanceof Error ? err.message : 'Die Aufgabe konnte nicht evolviert werden.')
+    } finally {
+      setEvolving(false)
     }
   }
 
@@ -187,6 +206,9 @@ export default function Practice() {
         onFinish={(points, max) => markResult(`${part}-${idx}`, points, max)}
         onNext={() => setIdx((i) => (i === null ? null : i + 1))}
         onBackToList={backLayer}
+        onEvolve={() => evolve(idx)}
+        evolving={evolving}
+        evolveError={evolveError}
       />
     </>
   )
@@ -253,9 +275,38 @@ interface PracticeTaskProps {
   onNext: () => void
   /** Zurück zur Aufgabenübersicht des Teils */
   onBackToList: () => void
+  /** Evolviert diese Aufgabe in eine neue, schwierigere Variante */
+  onEvolve: () => void
+  evolving: boolean
+  evolveError: string | null
 }
 
-function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList }: PracticeTaskProps) {
+/** Knopf, um die aktuell offene Aufgabe in eine neue, spürbar schwierigere Variante zu evolvieren -
+    funktioniert für Original- wie für KI-generierte Aufgaben gleichermaßen. */
+function EvolveAction({
+  evolving, evolveError, onEvolve,
+}: {
+  evolving: boolean
+  evolveError: string | null
+  onEvolve: () => void
+}) {
+  return (
+    <Box mt="$3">
+      <Btn variant="secondary" small disabled={evolving} onPress={evolving ? undefined : onEvolve}>
+        {evolving ? '🧬 Wird evolviert …' : '🧬 Schwierigere Variante erzeugen'}
+      </Btn>
+      {evolveError && (
+        <Text color="$error600" size="sm" mt="$2">
+          ⚠️ {evolveError}
+        </Text>
+      )}
+    </Box>
+  )
+}
+
+function PracticeTask({
+  part, d, idx, poolLength, onFinish, onNext, onBackToList, onEvolve, evolving, evolveError,
+}: PracticeTaskProps) {
   const [a1, setA1] = useState<number | undefined>(undefined)
   const [a2, setA2] = useState<(number | undefined)[]>([undefined, undefined, undefined, undefined])
   // Erst nach explizitem Klick auf "Antwort abgeben" wird ausgewertet - ein versehentlicher
@@ -319,6 +370,7 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
       <>
         <Teil1 d={d as Teil1Task} ans={a1} onPick={setA1} mode="practice" submitted={submitted} />
         {submitButton}
+        <EvolveAction evolving={evolving} evolveError={evolveError} onEvolve={onEvolve} />
         {summary}
       </>
     )
@@ -334,6 +386,7 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
           submitted={submitted}
         />
         {submitButton}
+        <EvolveAction evolving={evolving} evolveError={evolveError} onEvolve={onEvolve} />
         {summary}
       </>
     )
@@ -343,6 +396,7 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
       <>
         <Teil3 d={d as Teil3Task} ans={a1} onPick={setA1} mode="practice" submitted={submitted} />
         {submitButton}
+        <EvolveAction evolving={evolving} evolveError={evolveError} onEvolve={onEvolve} />
         {summary}
       </>
     )
@@ -395,6 +449,7 @@ function PracticeTask({ part, d, idx, poolLength, onFinish, onNext, onBackToList
           </Box>
         )}
       </Box>
+      <EvolveAction evolving={evolving} evolveError={evolveError} onEvolve={onEvolve} />
       {summary}
     </Teil4Prompt>
   )

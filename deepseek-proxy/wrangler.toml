@@ -1,0 +1,20 @@
+# Cloudflare-Worker-Konfiguration für den DeepSeek-Proxy (siehe README.md).
+# Deploy: npx wrangler deploy (aus diesem Ordner heraus)
+
+name = "sprachtest-deepseek-proxy"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Nicht-geheime Konfiguration. ALLOWED_ORIGIN: die Origin(s), von denen aus die
+# App laufen darf - kommagetrennt, z. B. "https://dein-name.github.io" (ohne
+# Pfad, ohne abschließenden Slash). Für lokale Entwicklung zusätzlich
+# "http://localhost:5173" eintragen. "*" erlaubt jeden Origin (nicht empfohlen,
+# außer zum schnellen Ausprobieren).
+[vars]
+ALLOWED_ORIGIN = "http://localhost:5173"
+
+# Echte Geheimnisse gehören NICHT hier hinein, sondern werden per Wrangler-CLI
+# gesetzt (landen dann verschlüsselt bei Cloudflare, nicht im Repo):
+#
+#   npx wrangler secret put DEEPSEEK_API_KEY
+#   npx wrangler secret put PROXY_TOKEN   # optional, siehe README.md

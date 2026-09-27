@@ -1,4 +1,4 @@
-/* Erstellt per Gemini eine neue Übung zu einer Übungsform (Satzbau-Puzzle,
+/* Erstellt (und evolviert) per KI eine neue Übung zu einer Übungsform (Satzbau-Puzzle,
    Fehlersuche, Diktat, Monolog, Blitzrunde, Nachsprechen).
 
    Leitgedanke: Das Modell liefert nur SÄTZE, niemals Strukturdaten. Also keine
@@ -8,14 +8,18 @@
    Satz lässt sich dagegen immer verarbeiten.
 
    Brief-Baukasten und Rollenspiel sind bewusst nicht dabei: Beide brauchen von
-   Hand abgestimmte Bausteine bzw. Rollen, und ihre Sammlungen sind lang genug. */
+   Hand abgestimmte Bausteine bzw. Rollen, und ihre Sammlungen sind lang genug.
+
+   Welcher KI-Anbieter (Gemini oder DeepSeek) antwortet, entscheidet aiJson()
+   (aiProvider.ts) anhand der Einstellung oben in der App. */
 import { z } from 'zod'
 import type {
   MethodExercise, MethodKind, WordOrderExercise, ErrorHuntExercise, DictationExercise,
   MonologueExercise, BlitzExercise, ShadowingExercise,
 } from '../data/types'
 import { splitWords, findErrorIndices } from '../lib/wordDiff'
-import { geminiJson, type GeminiSchema } from './geminiClient'
+import { type GeminiSchema } from './geminiClient'
+import { aiJson } from './aiProvider'
 
 /** Übungsformen, für die sich sinnvoll neue Aufgaben generieren lassen. */
 export const GENERATABLE: MethodKind[] = ['wordorder', 'errorhunt', 'dictation', 'monologue', 'blitz', 'shadowing']
@@ -180,6 +184,17 @@ function newId(): string {
   return `ai-${crypto.randomUUID()}`
 }
 
+function call<T>(responseSchema: GeminiSchema, zodSchema: z.ZodType<T>, user: string) {
+  return aiJson({
+    timeoutMs: 60_000,
+    thinkingLevel: 'MEDIUM',
+    system: SYSTEM_PROMPT,
+    user,
+    responseSchema,
+    zodSchema,
+  })
+}
+
 /** Erzeugt eine neue Übung zur angegebenen Übungsform.
     `existing` sind die Aufgaben, die schon da sind - sie gehen als "nicht
     wiederholen" in den Prompt. */
@@ -187,67 +202,28 @@ export async function generateMethodExercise(kind: MethodKind, existing: MethodE
   const avoid = existing.slice(-12).map(describeExisting).filter(Boolean)
   const avoidBlock = avoid.length > 0 ? `\nSchon vorhanden (nicht wiederholen):\n${avoid.map((a) => `- ${a}`).join('\n')}\n` : ''
 
-  const call = <T>(responseSchema: GeminiSchema, zodSchema: z.ZodType<T>, task: string) =>
-    geminiJson({
-      model: 'gemini-3.5-flash',
-      fallbackModel: 'gemini-3.1-flash-lite',
-      timeoutMs: 60_000,
-      thinkingLevel: 'MEDIUM',
-      system: SYSTEM_PROMPT,
-      user: task + avoidBlock,
-      responseSchema,
-      zodSchema,
-    })
-
   switch (kind) {
     case 'wordorder': {
       const r = await call(
         WORDORDER_SCHEMA,
         WordOrderSchema,
         'Erstelle einen deutschen Satz für ein Satzbau-Puzzle: Der Lernende bekommt die Wörter gemischt und ' +
-          'muss sie in die richtige Reihenfolge bringen.'
+          'muss sie in die richtige Reihenfolge bringen.' + avoidBlock
       )
-      // Alternativen verwerfen, die nicht exakt dieselben Wörter benutzen - sonst
-      // gälte eine Lösung als richtig, die mit den vorhandenen Chips gar nicht
-      // baubar ist.
-      const alternatives = (r.alternatives ?? []).filter((alt) => sameWords(alt, r.solution))
-      const exercise: WordOrderExercise = {
-        id: newId(),
-        kind: 'wordorder',
-        instruction: 'Bring die Wörter in die richtige Reihenfolge.',
-        solution: r.solution,
-        alternatives: alternatives.length > 0 ? alternatives : undefined,
-        why: r.why,
-      }
-      return exercise
+      return buildWordOrder(r)
     }
 
     case 'errorhunt': {
       const r = await call(
         ERRORHUNT_SCHEMA,
         ErrorHuntSchema,
-        'Erstelle einen deutschen Satz mit genau einem typischen B1-Fehler für eine Fehlersuche.'
+        'Erstelle einen deutschen Satz mit genau einem typischen B1-Fehler für eine Fehlersuche.' + avoidBlock
       )
-      // Gegenprobe: Unterscheiden sich die beiden Sätze wirklich nur an einer
-      // Stelle? Manchmal formuliert das Modell den ganzen Satz um - eine solche
-      // Aufgabe wäre nicht lösbar, weil es keine eindeutige Fehlerstelle gibt.
-      const spots = findErrorIndices(r.wrong, r.correct)
-      if (spots.length === 0 || spots.length > 2) {
-        throw new Error('Die KI hat keine saubere Übung geliefert (mehr als eine Abweichung). Bitte noch einmal versuchen.')
-      }
-      const exercise: ErrorHuntExercise = {
-        id: newId(),
-        kind: 'errorhunt',
-        instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
-        wrong: r.wrong,
-        correct: r.correct,
-        why: r.why,
-      }
-      return exercise
+      return buildErrorHunt(r)
     }
 
     case 'dictation': {
-      const r = await call(DICTATION_SCHEMA, DictationSchema, 'Erstelle einen deutschen Satz für ein Diktat.')
+      const r = await call(DICTATION_SCHEMA, DictationSchema, 'Erstelle einen deutschen Satz für ein Diktat.' + avoidBlock)
       const exercise: DictationExercise = {
         id: newId(),
         kind: 'dictation',
@@ -262,7 +238,7 @@ export async function generateMethodExercise(kind: MethodKind, existing: MethodE
       const r = await call(
         MONOLOGUE_SCHEMA,
         MonologueSchema,
-        'Erstelle ein Thema für einen 60-Sekunden-Monolog mit genau drei Aspekten, die vorkommen sollen.'
+        'Erstelle ein Thema für einen 60-Sekunden-Monolog mit genau drei Aspekten, die vorkommen sollen.' + avoidBlock
       )
       const exercise: MonologueExercise = {
         id: newId(),
@@ -276,7 +252,7 @@ export async function generateMethodExercise(kind: MethodKind, existing: MethodE
     }
 
     case 'blitz': {
-      const r = await call(BLITZ_SCHEMA, BlitzSchema, 'Erstelle einen Fragensatz für eine Blitzrunde.')
+      const r = await call(BLITZ_SCHEMA, BlitzSchema, 'Erstelle einen Fragensatz für eine Blitzrunde.' + avoidBlock)
       const exercise: BlitzExercise = {
         id: newId(),
         kind: 'blitz',
@@ -288,7 +264,7 @@ export async function generateMethodExercise(kind: MethodKind, existing: MethodE
     }
 
     case 'shadowing': {
-      const r = await call(SHADOWING_SCHEMA, ShadowingSchema, 'Erstelle ein Set von Sätzen zum Nachsprechen.')
+      const r = await call(SHADOWING_SCHEMA, ShadowingSchema, 'Erstelle ein Set von Sätzen zum Nachsprechen.' + avoidBlock)
       const exercise: ShadowingExercise = {
         id: newId(),
         kind: 'shadowing',
@@ -301,6 +277,112 @@ export async function generateMethodExercise(kind: MethodKind, existing: MethodE
 
     default:
       throw new Error('Für diese Übungsform lassen sich keine neuen Aufgaben generieren.')
+  }
+}
+
+/** Evolviert eine bestehende Übung derselben Übungsform in eine neue, spürbar
+    schwierigere Variante. `pool` dient wie bei generateMethodExercise() nur als
+    "nicht wiederholen"-Liste. */
+export async function evolveMethodExercise(
+  kind: MethodKind,
+  existing: MethodExercise,
+  pool: MethodExercise[]
+): Promise<MethodExercise> {
+  const avoid = pool.slice(-12).map(describeExisting).filter(Boolean)
+  const avoidBlock = avoid.length > 0 ? `\nSchon vorhanden (nicht wiederholen):\n${avoid.map((a) => `- ${a}`).join('\n')}\n` : ''
+  const base = `Hier ist eine existierende Übung (${describeExisting(existing)}). Erstelle daraus eine EVOLVIERTE, ` +
+    'neue Version: gleiche Übungsform, aber spürbar schwieriger und mit neuem, konkretem Inhalt - keine triviale ' +
+    'Umformulierung des Originals.' + avoidBlock
+
+  switch (kind) {
+    case 'wordorder': {
+      const r = await call(WORDORDER_SCHEMA, WordOrderSchema, base + ' Verwende eine anspruchsvollere Wortstellungsregel oder einen längeren Satz (aber weiterhin B1).')
+      return buildWordOrder(r)
+    }
+    case 'errorhunt': {
+      const r = await call(ERRORHUNT_SCHEMA, ErrorHuntSchema, base + ' Verwende einen subtileren, leichter zu übersehenden Fehlertyp als im Original.')
+      return buildErrorHunt(r)
+    }
+    case 'dictation': {
+      const r = await call(DICTATION_SCHEMA, DictationSchema, base + ' Baue eine zusätzliche oder andere Rechtschreibfalle ein.')
+      const exercise: DictationExercise = {
+        id: newId(),
+        kind: 'dictation',
+        instruction: 'Höre den Satz an und schreibe ihn genau auf.',
+        sentence: r.sentence,
+        watchOut: r.watchOut,
+      }
+      return exercise
+    }
+    case 'monologue': {
+      const r = await call(MONOLOGUE_SCHEMA, MonologueSchema, base + ' Wähle ein abstrakteres oder meinungsbasierteres Thema als im Original.')
+      const exercise: MonologueExercise = {
+        id: newId(),
+        kind: 'monologue',
+        instruction: 'Sprich 60 Sekunden am Stück über das Thema. Alle drei Punkte sollen vorkommen.',
+        topic: r.topic,
+        seconds: 60,
+        mustMention: r.mustMention,
+      }
+      return exercise
+    }
+    case 'blitz': {
+      const r = await call(BLITZ_SCHEMA, BlitzSchema, base + ' Stelle Fragen, die etwas mehr Nachdenken oder Begründen erfordern als im Original.')
+      const exercise: BlitzExercise = {
+        id: newId(),
+        kind: 'blitz',
+        instruction: 'Antworte sofort, in ganzen Sätzen. Pro Frage hast du 20 Sekunden.',
+        seconds: 20,
+        questions: r.questions,
+      }
+      return exercise
+    }
+    case 'shadowing': {
+      const r = await call(SHADOWING_SCHEMA, ShadowingSchema, base + ' Verwende längere oder lautlich anspruchsvollere Sätze als im Original.')
+      const exercise: ShadowingExercise = {
+        id: newId(),
+        kind: 'shadowing',
+        instruction: 'Hör dir jeden Satz an und sprich ihn genauso nach.',
+        focus: r.focus,
+        sentences: r.sentences,
+      }
+      return exercise
+    }
+    default:
+      throw new Error('Für diese Übungsform lässt sich keine evolvierte Aufgabe erstellen.')
+  }
+}
+
+function buildWordOrder(r: z.infer<typeof WordOrderSchema>): WordOrderExercise {
+  // Alternativen verwerfen, die nicht exakt dieselben Wörter benutzen - sonst
+  // gälte eine Lösung als richtig, die mit den vorhandenen Chips gar nicht
+  // baubar ist.
+  const alternatives = (r.alternatives ?? []).filter((alt) => sameWords(alt, r.solution))
+  return {
+    id: newId(),
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: r.solution,
+    alternatives: alternatives.length > 0 ? alternatives : undefined,
+    why: r.why,
+  }
+}
+
+function buildErrorHunt(r: z.infer<typeof ErrorHuntSchema>): ErrorHuntExercise {
+  // Gegenprobe: Unterscheiden sich die beiden Sätze wirklich nur an einer
+  // Stelle? Manchmal formuliert das Modell den ganzen Satz um - eine solche
+  // Aufgabe wäre nicht lösbar, weil es keine eindeutige Fehlerstelle gibt.
+  const spots = findErrorIndices(r.wrong, r.correct)
+  if (spots.length === 0 || spots.length > 2) {
+    throw new Error('Die KI hat keine saubere Übung geliefert (mehr als eine Abweichung). Bitte noch einmal versuchen.')
+  }
+  return {
+    id: newId(),
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: r.wrong,
+    correct: r.correct,
+    why: r.why,
   }
 }
 

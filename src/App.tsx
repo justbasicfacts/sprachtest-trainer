@@ -14,6 +14,7 @@ import {
   Page, AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, ConfirmDialog,
 } from './components/ui/kit'
 import { LanguageSelector } from './components/ui/LanguageSelector'
+import { ModelPicker } from './components/ui/ModelPicker'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Start', icon: '🏠' },
@@ -86,6 +87,7 @@ export default function App() {
               B1-Trainer · Lesen · Schreiben · Sprechen · Training · Vokabeln
             </Text>
           </VStack>
+          <ModelPicker />
           <LanguageSelector />
         </HStack>
       </Box>

@@ -19,8 +19,8 @@ import {
   type GeneratedTrainingRecord, type GeneratedMethodRecord,
 } from '../db'
 import { useDrillStatus, type DrillStatus } from '../hooks/useDrillStatus'
-import { generateTrainingExercise } from '../ai/generateTrainingExercise'
-import { generateMethodExercise, canGenerate } from '../ai/generateMethodExercise'
+import { generateTrainingExercise, evolveTrainingExercise } from '../ai/generateTrainingExercise'
+import { generateMethodExercise, evolveMethodExercise, canGenerate } from '../ai/generateMethodExercise'
 import { ExerciseProgress, ExerciseBadge } from './training/ExerciseProgress'
 import { SpeakPractice } from './SpeakPractice'
 import { TranslateZone } from './useWordTranslate'
@@ -29,7 +29,7 @@ import { MethodExerciseView } from './training/MethodExerciseView'
 import { openLayer, backLayer } from '../appHistory'
 import {
   Box, Text, Heading, Muted, Tile, TileGrid, TileEmoji, TileTitle,
-  BackLink, Reveal, AppCard, Tag, SituationBox, NoTranslate,
+  BackLink, Reveal, AppCard, Tag, SituationBox, NoTranslate, Btn,
 } from './ui/kit'
 
 type Selection =
@@ -156,6 +156,29 @@ function MethodTile({ method, onPress }: { method: TrainingMethod; onPress: () =
 
 /* ------------------------------ Nach Fähigkeit ------------------------------ */
 
+/** Knopf, um eine bestehende Übung in eine neue, spürbar schwierigere Variante zu evolvieren -
+    gemeinsam für SkillView (nach Fähigkeit) und MethodView (nach Übungsform). */
+function EvolveAction({
+  evolving, evolveError, onEvolve,
+}: {
+  evolving: boolean
+  evolveError: string | null
+  onEvolve: () => void
+}) {
+  return (
+    <Box mt="$3">
+      <Btn variant="secondary" small disabled={evolving} onPress={evolving ? undefined : onEvolve}>
+        {evolving ? '🧬 Wird evolviert …' : '🧬 Schwierigere Variante erzeugen'}
+      </Btn>
+      {evolveError && (
+        <Text color="$error600" size="sm" mt="$2">
+          ⚠️ {evolveError}
+        </Text>
+      )}
+    </Box>
+  )
+}
+
 function SkillView({
   skill, exIdx, openExercise,
 }: {
@@ -189,11 +212,30 @@ function SkillView({
     }
   }
 
+  const [evolving, setEvolving] = useState(false)
+  const [evolveError, setEvolveError] = useState<string | null>(null)
+
+  // Evolviert eine bestehende Übung dieser Fähigkeit in eine neue, schwierigere Variante.
+  const evolve = async (sourceIdx: number) => {
+    setEvolving(true)
+    setEvolveError(null)
+    try {
+      const exercise = await evolveTrainingExercise(pool[sourceIdx], skill)
+      await saveGeneratedTrainingExercise(skill.id, exercise)
+      openExercise(pool.length)
+    } catch (err) {
+      setEvolveError(err instanceof Error ? err.message : 'Die Übung konnte nicht evolviert werden.')
+    } finally {
+      setEvolving(false)
+    }
+  }
+
   if (exIdx !== null && pool[exIdx]) {
     return (
       <>
         <BackLink onPress={backLayer}>← andere Übung wählen</BackLink>
         <SkillExerciseView skill={skill} exercise={pool[exIdx]} />
+        <EvolveAction evolving={evolving} evolveError={evolveError} onEvolve={() => evolve(exIdx)} />
       </>
     )
   }
@@ -362,11 +404,32 @@ function MethodView({
     }
   }
 
+  const [evolving, setEvolving] = useState(false)
+  const [evolveError, setEvolveError] = useState<string | null>(null)
+
+  // Evolviert eine bestehende Übung dieser Übungsform in eine neue, schwierigere Variante.
+  const evolve = async (sourceIdx: number) => {
+    setEvolving(true)
+    setEvolveError(null)
+    try {
+      const exercise = await evolveMethodExercise(method.id, pool[sourceIdx], pool)
+      await saveGeneratedMethodExercise(method.id, exercise)
+      openExercise(pool.length)
+    } catch (err) {
+      setEvolveError(err instanceof Error ? err.message : 'Die Übung konnte nicht evolviert werden.')
+    } finally {
+      setEvolving(false)
+    }
+  }
+
   if (exIdx !== null && pool[exIdx]) {
     return (
       <>
         <BackLink onPress={backLayer}>← andere Übung wählen</BackLink>
         <MethodExerciseView method={method} exercise={pool[exIdx]} />
+        {canGenerate(method.id) && (
+          <EvolveAction evolving={evolving} evolveError={evolveError} onEvolve={() => evolve(exIdx)} />
+        )}
       </>
     )
   }

@@ -6,6 +6,7 @@
    eingebettet. ACHTUNG: Bei einer öffentlichen Seite ist der Key damit für
    Besucher einsehbar - nur einen kostenlosen Free-Tier-Key verwenden. */
 import { z } from 'zod'
+import { fixDoubleEscapedNewlines, combineSignals } from './jsonUtils'
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
 
@@ -37,40 +38,6 @@ function isTransient(error: unknown): boolean {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-
-/** Manche Modelle "escapen" Zeilenumbrüche in JSON-String-Werten doppelt, wenn ihr
-    Prompt/Schema wörtlich "\n" erwähnt: statt eines echten Zeilenumbruchs liefern sie
-    dann das literale Zeichenpaar Backslash+n, das nach dem JSON.parse als sichtbares
-    "\n" im Text auftaucht statt als Zeilenumbruch. Das räumt das rekursiv in allen
-    Strings des geparsten Objekts auf, bevor zod validiert. */
-function fixDoubleEscapedNewlines<T>(value: T): T {
-  if (typeof value === 'string') {
-    return value.replace(/\\n/g, '\n') as unknown as T
-  }
-  if (Array.isArray(value)) {
-    return value.map((v) => fixDoubleEscapedNewlines(v)) as unknown as T
-  }
-  if (value !== null && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, fixDoubleEscapedNewlines(v)])
-    ) as T
-  }
-  return value
-}
-
-/** Kombiniert mehrere AbortSignals zu einem (ohne auf AbortSignal.any angewiesen zu
-    sein, das nicht in jedem Zielbrowser verfügbar ist). */
-function combineSignals(signals: AbortSignal[]): AbortSignal {
-  const controller = new AbortController()
-  for (const s of signals) {
-    if (s.aborted) {
-      controller.abort(s.reason)
-      break
-    }
-    s.addEventListener('abort', () => controller.abort(s.reason), { once: true })
-  }
-  return controller.signal
-}
 
 /** Gemini-Schema im REST-Format (Teilmenge von OpenAPI, Typen in GROSSBUCHSTABEN). */
 export type GeminiSchema = Record<string, unknown>

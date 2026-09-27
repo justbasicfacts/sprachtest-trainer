@@ -30,6 +30,11 @@ jobs:
           # Wird zur Build-Zeit ins öffentliche JS-Bundle eingebettet -
           # nur einen kostenlosen Free-Tier-Key verwenden!
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          # Optional: DeepSeek als zweiter KI-Anbieter (siehe deepseek-proxy/README.md).
+          # Anders als der Gemini-Key ist das hier nur die URL eines eigenen Proxys, kein
+          # echter API-Key - unproblematisch, im öffentlichen Bundle zu haben.
+          VITE_DEEPSEEK_PROXY_URL: ${{ vars.VITE_DEEPSEEK_PROXY_URL }}
+          VITE_DEEPSEEK_PROXY_TOKEN: ${{ secrets.VITE_DEEPSEEK_PROXY_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

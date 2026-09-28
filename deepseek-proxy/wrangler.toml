@@ -11,7 +11,7 @@ compatibility_date = "2025-01-01"
 # "http://localhost:5173" eintragen. "*" erlaubt jeden Origin (nicht empfohlen,
 # außer zum schnellen Ausprobieren).
 [vars]
-ALLOWED_ORIGIN = "http://localhost:5173"
+ALLOWED_ORIGIN = "https://justbasicfacts.github.io,http://localhost:5173"
 
 # Echte Geheimnisse gehören NICHT hier hinein, sondern werden per Wrangler-CLI
 # gesetzt (landen dann verschlüsselt bei Cloudflare, nicht im Repo):

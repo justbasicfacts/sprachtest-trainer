@@ -12,6 +12,9 @@ interface ImportMetaEnv {
       (landet ebenfalls im öffentlichen Bundle), aber verhindert, dass jemand, der die
       Proxy-URL findet, sie einfach mitbenutzt. */
   readonly VITE_DEEPSEEK_PROXY_TOKEN?: string
+  /** SHA-256-Hash (hex) des App-Passworts für den PasswordGate (siehe dort) - nie
+      das Passwort selbst. Nicht gesetzt = App ungeschützt. */
+  readonly VITE_ACCESS_PASSWORD_HASH?: string
 }
 
 interface ImportMeta {

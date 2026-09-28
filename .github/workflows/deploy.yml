@@ -35,6 +35,9 @@ jobs:
           # echter API-Key - unproblematisch, im öffentlichen Bundle zu haben.
           VITE_DEEPSEEK_PROXY_URL: ${{ vars.VITE_DEEPSEEK_PROXY_URL }}
           VITE_DEEPSEEK_PROXY_TOKEN: ${{ secrets.VITE_DEEPSEEK_PROXY_TOKEN }}
+          # Optional: Passwortschutz (siehe src/components/PasswordGate.tsx) - ein
+          # SHA-256-Hash, kein Klartext-Passwort, aber trotzdem als Secret hinterlegt.
+          VITE_ACCESS_PASSWORD_HASH: ${{ secrets.VITE_ACCESS_PASSWORD_HASH }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

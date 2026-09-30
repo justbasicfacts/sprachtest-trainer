@@ -2,7 +2,8 @@
    Ausdruck, z. B. Präpositionen, Nebensätze, Konnektoren). Läuft direkt im Browser,
    gleiche Aufruf-Signatur wie die anderen ai/*-Funktionen. */
 import { z } from 'zod'
-import { geminiJson, type GeminiSchema } from './geminiClient'
+import type { GeminiSchema } from './geminiClient'
+import { geminiJsonWithDeepseekFallback } from './geminiFallback'
 
 const CheckSchema = z.object({
   ok: z.boolean(),
@@ -46,7 +47,7 @@ export async function checkTrainingAnswer(input: {
     `\nAntwort des Lernenden:\n"""\n${answer}\n"""\n\n` +
     'Prüfe die Antwort und antworte im vorgegebenen Schema.'
 
-  return await geminiJson({
+  return await geminiJsonWithDeepseekFallback({
     model: 'gemini-3.5-flash',
     fallbackModel: 'gemini-3.1-flash-lite',
     timeoutMs: 45_000,

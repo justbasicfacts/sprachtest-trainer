@@ -5,7 +5,8 @@
    aus den Einzelkriterien gezählt, damit sie immer konsistent ist. */
 import { z } from 'zod'
 import type { Teil4Task } from '../data/types'
-import { geminiJson, type GeminiSchema } from './geminiClient'
+import type { GeminiSchema } from './geminiClient'
+import { geminiJsonWithDeepseekFallback } from './geminiFallback'
 
 const CriterionSchema = z.object({
   ok: z.boolean(),
@@ -90,7 +91,7 @@ const SYSTEM_PROMPT =
 export async function scoreWriting(input: { data: { task: Teil4Task; text: string } }): Promise<WritingScore> {
   const { task, text } = input.data
 
-  const raw = await geminiJson({
+  const raw = await geminiJsonWithDeepseekFallback({
     model: 'gemini-3.5-flash',
     fallbackModel: 'gemini-3.1-flash-lite',
     timeoutMs: 60_000,

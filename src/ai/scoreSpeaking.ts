@@ -6,7 +6,8 @@
    Die Kriterien kommen vom Aufrufer, damit dieselbe Funktion für Kennenlernen,
    Fotobeschreibung und Situationen passt. */
 import { z } from 'zod'
-import { geminiJson, type GeminiSchema } from './geminiClient'
+import type { GeminiSchema } from './geminiClient'
+import { geminiJsonWithDeepseekFallback } from './geminiFallback'
 
 export interface SpeakingScore {
   checks: { ok: boolean; comment: string }[]
@@ -141,7 +142,7 @@ export async function scoreSpeaking(input: {
   }
   user += '\nBewerte die Antwort nach den Kriterien im Schema.'
 
-  return geminiJson({
+  return geminiJsonWithDeepseekFallback({
     model: 'gemini-3.5-flash',
     fallbackModel: 'gemini-3.1-flash-lite',
     timeoutMs: hasAudio ? 90_000 : 60_000, // Audio-Upload + Analyse braucht länger
@@ -227,7 +228,7 @@ export async function scoreSpeakingExamPart(input: {
   }
   user += `\nVergib die Punkte (0-${maxPoints}) und begründe kurz.`
 
-  const raw = await geminiJson({
+  const raw = await geminiJsonWithDeepseekFallback({
     model: 'gemini-3.5-flash',
     fallbackModel: 'gemini-3.1-flash-lite',
     timeoutMs: hasAudio ? 90_000 : 60_000,

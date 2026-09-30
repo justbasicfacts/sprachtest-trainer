@@ -3,7 +3,7 @@
    Browser (statisches Hosting ohne Server); gleiche Aufruf-Signatur wie die
    frühere Serverfunktion: translateWord({ data: { word, context } }). */
 import { z } from 'zod'
-import { geminiJson } from './geminiClient'
+import { geminiJsonWithDeepseekFallback } from './geminiFallback'
 
 const TranslateWordInput = z.object({
   word: z.string().min(1).max(60),
@@ -34,7 +34,7 @@ const RESPONSE_SCHEMA = {
 export async function translateWord(input: { data: { word: string; context?: string } }) {
   const data = TranslateWordInput.parse(input.data)
 
-  return geminiJson({
+  return geminiJsonWithDeepseekFallback({
     model: 'gemini-3.1-flash-lite', // günstigstes Modell, für Übersetzung/einfache Aufgaben optimiert
     timeoutMs: 15_000, // kleine Übersetzung: schnell abbrechen und neu versuchen
     system:

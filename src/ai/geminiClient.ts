@@ -49,7 +49,7 @@ export interface GeminiTurn {
   text: string
 }
 
-interface GeminiJsonOpts<T> {
+export interface GeminiJsonOpts<T> {
   model: string
   /** Ausweichmodell, wenn das Hauptmodell überlastet bleibt (503/429). */
   fallbackModel?: string

@@ -83,10 +83,15 @@ const RESPONSE_SCHEMA: GeminiSchema = {
 
 const SYSTEM_PROMPT =
   'Du bist Prüfer für den Berliner Sprachtest für die Einbürgerung (Deutsch-Niveau B1) und bewertest Teil 4 ' +
-  '(eine kurze Nachricht schreiben). Bewerte fair, aber wie in der echten Prüfung: Ein Inhaltspunkt zählt nur, ' +
-  'wenn er mit 1-2 verständlichen Sätzen wirklich behandelt wurde - nicht bei bloßer Erwähnung. Kleine Grammatik- ' +
-  'und Rechtschreibfehler sind auf B1-Niveau normal und kosten keine Punkte, solange der Text verständlich bleibt. ' +
-  'Gib dein Feedback auf einfachem, freundlichem Deutsch (B1-gerecht).'
+  '(eine kurze Nachricht schreiben). Bewerte STRENG und kritisch, im Zweifel gegen den Kandidaten: Ein ' +
+  'Inhaltspunkt zählt nur, wenn er klar, konkret und mit 1-2 grammatisch korrekten, eindeutig verständlichen ' +
+  'Sätzen behandelt wurde - eine vage, unklare, unvollständige oder nur angedeutete Erwähnung zählt NICHT als ' +
+  'erfüllt. Grammatik- und Rechtschreibfehler, die das Verständnis auch nur leicht erschweren, den Sinn ' +
+  'verändern oder sich über den Text häufen, kosten den Klarheitspunkt (clarity) - nur wirklich unauffällige, ' +
+  'vereinzelte Kleinigkeiten werden toleriert. Bei der Anrede/Gruß (greeting) zählt nur eine wirklich passende, ' +
+  'situationsgerechte Formulierung, keine generische oder unpassende. Gib dein Feedback auf einfachem, ' +
+  'freundlichem Deutsch (B1-gerecht), aber sei in der Bewertung selbst konsequent streng, nicht wohlwollend, ' +
+  'und vergib Punkte nur bei eindeutig erfüllten Kriterien.'
 
 export async function scoreWriting(input: { data: { task: Teil4Task; text: string } }): Promise<WritingScore> {
   const { task, text } = input.data

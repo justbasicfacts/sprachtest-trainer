@@ -4,7 +4,7 @@
    ausgewertet. Ergebnis: /15 (nur schriftlich) oder /30 (komplett). */
 import { useEffect, useRef, useState } from 'react'
 import { DATA } from '../data/content'
-import { db } from '../db'
+import { db, saveWritingAttempt } from '../db'
 import { Teil1, Teil2, Teil3, Teil4Prompt, WordCount, scoreLesen, CheckRow } from './Tasks'
 import { TranslateZone } from './useWordTranslate'
 import { WritingScoreView } from './AiScore'
@@ -463,7 +463,9 @@ function BewertungAI({ text, task, onNext }: { text: string; task: Teil4Task; on
     setLoading(true)
     setError(null)
     try {
-      setResult(await scoreWriting({ data: { task, text } }))
+      const scored = await scoreWriting({ data: { task, text } })
+      setResult(scored)
+      void saveWritingAttempt({ source: 'exam', situation: task.situation, points: task.points, text, result: scored })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Die KI-Bewertung ist fehlgeschlagen.')
     } finally {

@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import { VOCAB_SEED } from './data/vocab'
 import type { Teil1Task, Teil2Task, Teil3Task, Teil4Task, TrainingExercise, MethodExercise, MethodKind } from './data/types'
+import type { WritingScore } from './ai/scoreWriting'
 
 export interface VocabWord {
   id?: number
@@ -78,6 +79,21 @@ export interface DrillRecord {
   ts: number
 }
 
+/** Ein abgeschlossener Schreibversuch (Teil 4): Text + komplette KI-Bewertung,
+    dauerhaft gespeichert - Grundlage für das Schreib-Notizbuch, in dem man alte
+    Texte und ihr Feedback nachlesen kann. Egal ob der Text im Übungsmodus, im
+    Brief-Baukasten oder in der Prüfungssimulation entstanden ist - alle drei
+    landen hier im selben Store. */
+export interface WritingAttempt {
+  id?: number
+  source: 'practice' | 'letterbuilder' | 'exam'
+  situation: string
+  points: string[]
+  text: string
+  result: WritingScore
+  ts: number
+}
+
 class AppDatabase extends Dexie {
   vocab!: Table<VocabWord, number>
   results!: Table<ExamResult, number>
@@ -85,6 +101,7 @@ class AppDatabase extends Dexie {
   trainingGenerated!: Table<GeneratedTrainingRecord, string>
   methodGenerated!: Table<GeneratedMethodRecord, string>
   drills!: Table<DrillRecord, number>
+  writingAttempts!: Table<WritingAttempt, number>
 
   constructor() {
     super('sprachtest-trainer')
@@ -112,6 +129,17 @@ class AppDatabase extends Dexie {
       trainingGenerated: 'id, skillId, createdAt',
       methodGenerated: 'id, methodId, createdAt',
       drills: '++id, methodId, ts',
+    })
+    // v5: Schreib-Notizbuch - jeder bewertete Teil-4-Text landet hier, damit man
+    // alte Texte samt KI-Feedback später nachlesen kann. Rein additiv.
+    this.version(5).stores({
+      vocab: '++id, de, due, tag, custom',
+      results: '++id, date',
+      generated: 'id, part, createdAt',
+      trainingGenerated: 'id, skillId, createdAt',
+      methodGenerated: 'id, methodId, createdAt',
+      drills: '++id, methodId, ts',
+      writingAttempts: '++id, ts, source',
     })
   }
 }
@@ -165,6 +193,22 @@ export async function updateDrill(id: number | undefined, patch: Partial<DrillRe
 /** Löscht den Übungsfortschritt einer Fähigkeit oder Übungsform (die Häkchen). */
 export async function resetDrills(scopeId: string): Promise<void> {
   await db.drills.where('methodId').equals(scopeId).delete()
+}
+
+/** Speichert einen bewerteten Teil-4-Text fürs Schreib-Notizbuch. Bewusst
+    "fire and forget" wie logDrill: ein Speicherfehler darf die schon auf dem
+    Bildschirm stehende Bewertung nie unterbrechen. */
+export async function saveWritingAttempt(entry: Omit<WritingAttempt, 'id' | 'ts'>): Promise<void> {
+  try {
+    await db.writingAttempts.add({ ...entry, ts: Date.now() })
+  } catch (err) {
+    console.warn('[db] Schreibversuch konnte nicht gespeichert werden:', err)
+  }
+}
+
+/** Löscht einen einzelnen Eintrag aus dem Schreib-Notizbuch. */
+export async function deleteWritingAttempt(id: number): Promise<void> {
+  await db.writingAttempts.delete(id)
 }
 
 /** Seed the vocab table on first run (guarded against double-invocation, e.g. React StrictMode) */

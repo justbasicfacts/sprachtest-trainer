@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react'
 import type { Teil4Task } from '../data/types'
 import { scoreWriting, type WritingScore } from '../ai/scoreWriting'
+import { saveWritingAttempt } from '../db'
 import { WordCount } from './Tasks'
 import { Box, HStack, VStack, Text, Btn, Muted } from './ui/kit'
 
@@ -32,7 +33,9 @@ export function AiWritingScore({
     setLoading(true)
     setError(null)
     try {
-      setResult(await scoreWriting({ data: { task: d, text } }))
+      const scored = await scoreWriting({ data: { task: d, text } })
+      setResult(scored)
+      void saveWritingAttempt({ source: 'practice', situation: d.situation, points: d.points, text, result: scored })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Die Bewertung ist fehlgeschlagen.')
     } finally {

@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { LetterBuilderExercise, Teil4Task } from '../../data/types'
 import { checkTrainingAnswer, type TrainingCheckResult } from '../../ai/checkTrainingAnswer'
 import { scoreWriting, type WritingScore } from '../../ai/scoreWriting'
-import { logDrill, updateDrill } from '../../db'
+import { logDrill, updateDrill, saveWritingAttempt } from '../../db'
 import {
   Box, HStack, VStack, Text, Muted, Btn, TextArea, ProgressBar, SituationBox, Reveal, ScoreBox, NoTranslate,
 } from '../ui/kit'
@@ -116,6 +116,13 @@ export function LetterBuilder({ exercise }: { exercise: LetterBuilderExercise })
         ok: result.score >= 4,
         value: result.score,
         detail: `${result.score}/6 Punkte`,
+      })
+      void saveWritingAttempt({
+        source: 'letterbuilder',
+        situation: exercise.situation,
+        points: asTeil4Task(exercise).points,
+        text: letter,
+        result,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Die Bewertung ist fehlgeschlagen.')

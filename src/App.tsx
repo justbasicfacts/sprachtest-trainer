@@ -9,6 +9,7 @@ import Exam from './components/Exam'
 import Speak from './components/Speak'
 import Training from './components/Training'
 import Vocab from './components/Vocab'
+import WritingNotebook from './components/WritingNotebook'
 import {
   Box, HStack, VStack, Text, Heading, Pressable, useBreakpointValue,
   Page, AppCard, CardTitle, Muted, Tile, TileGrid, TileEmoji, TileTitle, ConfirmDialog,
@@ -23,6 +24,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'speak', label: 'Sprechen', icon: '🗣️' },
   { id: 'training', label: 'Training', icon: '🛠️' },
   { id: 'vocab', label: 'Vokabeln', icon: '📚' },
+  { id: 'notebook', label: 'Notizbuch', icon: '📓' },
 ]
 
 export default function App() {
@@ -108,6 +110,7 @@ export default function App() {
             {view === 'speak' && <Speak />}
             {view === 'training' && <Training />}
             {view === 'vocab' && <Vocab />}
+            {view === 'notebook' && <WritingNotebook />}
           </motion.div>
         </Page>
       </Box>
@@ -215,6 +218,7 @@ function Home({ go }: { go: (v: TabId) => void }) {
       id: 'vocab', icon: '📚', title: 'Vokabeln',
       sub: dueCount != null && dueCount > 0 ? <Text fontWeight="$bold">{dueCount} Wörter fällig – jetzt wiederholen!</Text> : 'B1-Wortschatz mit Spaced Repetition.',
     },
+    { id: 'notebook', icon: '📓', title: 'Schreib-Notizbuch', sub: 'Alle KI-bewerteten Teil-4-Texte zum Nachlesen - mit Punktzahl und Feedback.' },
   ]
 
   return (

@@ -4,7 +4,8 @@
 
    Abgedeckt: Kasus nach Präposition, Verbstellung im Nebensatz, Artikel,
    sein/haben im Perfekt, Adjektivendung, Position nach Konnektoren,
-   trennbare Verben, Reflexivpronomen. */
+   trennbare Verben, Reflexivpronomen, Relativpronomen, Modalverben und
+   nicht müssen gegen nicht dürfen. */
 import type { ErrorHuntExercise } from '../types'
 
 export const ERRORHUNT_EXERCISES: ErrorHuntExercise[] = [
@@ -103,5 +104,69 @@ export const ERRORHUNT_EXERCISES: ErrorHuntExercise[] = [
     wrong: 'Ich helfe meinen Bruder bei den Hausaufgaben.',
     correct: 'Ich helfe meinem Bruder bei den Hausaufgaben.',
     why: '„helfen" verlangt den Dativ: Ich helfe meinem Bruder, meiner Schwester, den Kindern.',
+  },
+  {
+    id: 'eh-13',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Das ist der Mann, dem neben mir wohnt.',
+    correct: 'Das ist der Mann, der neben mir wohnt.',
+    why: 'Das Relativpronomen ist Subjekt im Relativsatz, also Nominativ: der Mann, der neben mir wohnt.',
+  },
+  {
+    id: 'eh-14',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Ich habe eine neues Wohnung gefunden.',
+    correct: 'Ich habe eine neue Wohnung gefunden.',
+    why: 'Nach „eine“ im Akkusativ Feminin steht die Endung -e: eine neue Wohnung.',
+  },
+  {
+    id: 'eh-15',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Ich denke oft an meinem Vater.',
+    correct: 'Ich denke oft an meinen Vater.',
+    why: '„denken an“ verlangt den Akkusativ: an meinen Vater, an meine Mutter.',
+  },
+  {
+    id: 'eh-16',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Sie hat gestern zu Hause geblieben.',
+    correct: 'Sie ist gestern zu Hause geblieben.',
+    why: '„bleiben“ bildet das Perfekt mit „sein“: sie ist geblieben.',
+  },
+  {
+    id: 'eh-17',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Ich wohne seit fünf Jahren in die Stadt.',
+    correct: 'Ich wohne seit fünf Jahren in der Stadt.',
+    why: '„in“ mit Dativ bei einem Ort (Wo?): in der Stadt, in dem Haus.',
+  },
+  {
+    id: 'eh-18',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Er hat mir gefragt, ob ich Zeit habe.',
+    correct: 'Er hat mich gefragt, ob ich Zeit habe.',
+    why: '„fragen“ steht mit dem Akkusativ: Er fragt mich, nicht mir.',
+  },
+  {
+    id: 'eh-19',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Du musst hier nicht rauchen, das ist verboten.',
+    correct: 'Du darfst hier nicht rauchen, das ist verboten.',
+    why: 'Ein Verbot ist „nicht dürfen“. „Nicht müssen“ heißt, dass etwas nicht nötig ist.',
+  },
+  {
+    id: 'eh-20',
+    kind: 'errorhunt',
+    instruction: 'In diesem Satz steckt ein Fehler. Tippe das falsche Wort an und korrigiere es.',
+    wrong: 'Ich kann gestern nicht kommen, weil ich krank war.',
+    correct: 'Ich konnte gestern nicht kommen, weil ich krank war.',
+    why: 'In der Vergangenheit stehen Modalverben im Präteritum: konnte, musste, durfte, wollte.',
   },
 ]

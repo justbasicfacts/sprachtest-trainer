@@ -2,7 +2,8 @@
    Die Auswertung läuft komplett lokal über den Wort-Diff - kein API-Key nötig.
 
    Die Sätze sind bewusst auf typische Diktatfallen gebaut: Großschreibung der
-   Nomen, ß/ss, Umlaute, Dehnungs-h und das Komma vor Nebensätzen. */
+   Nomen, ß/ss, Umlaute, Dehnungs-h, Komma vor Nebensätzen und Perfektformen
+   mit haben oder sein. */
 import type { DictationExercise } from '../types'
 
 export const DICTATION_EXERCISES: DictationExercise[] = [
@@ -89,5 +90,33 @@ export const DICTATION_EXERCISES: DictationExercise[] = [
     instruction: 'Höre den Satz an und schreibe ihn genau auf.',
     sentence: 'Ich freue mich sehr, dass ich die Prüfung bestanden habe.',
     watchOut: 'Nach „dass" steht das Verb am Ende: bestanden habe.',
+  },
+  {
+    id: 'dik-13',
+    kind: 'dictation',
+    instruction: 'Höre den Satz an und schreibe ihn genau auf.',
+    sentence: 'Ich habe mich gestern beim Bürgeramt um einen Termin gekümmert.',
+    watchOut: 'Perfekt mit „haben“: habe … gekümmert. Nomen groß: Bürgeramt, Termin.',
+  },
+  {
+    id: 'dik-14',
+    kind: 'dictation',
+    instruction: 'Höre den Satz an und schreibe ihn genau auf.',
+    sentence: 'Nach dem Umzug mussten wir die neue Wohnung renovieren.',
+    watchOut: '„nach“ + Dativ (dem Umzug), Modalverb mit ss: mussten.',
+  },
+  {
+    id: 'dik-15',
+    kind: 'dictation',
+    instruction: 'Höre den Satz an und schreibe ihn genau auf.',
+    sentence: 'Meine Schwester ist letztes Jahr nach Wien gezogen.',
+    watchOut: 'Bewegungsverb mit „sein“: ist gezogen. „letztes“ wird kleingeschrieben.',
+  },
+  {
+    id: 'dik-16',
+    kind: 'dictation',
+    instruction: 'Höre den Satz an und schreibe ihn genau auf.',
+    sentence: 'Wegen des schlechten Wetters sind wir zu Hause geblieben.',
+    watchOut: '„wegen“ + Genitiv: des Wetters. „bleiben“ mit „sein“: sind geblieben.',
   },
 ]

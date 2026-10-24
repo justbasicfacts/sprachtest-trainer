@@ -4,7 +4,8 @@
 
    Abgedeckt: Verb am Ende im Nebensatz (weil/dass/damit/obwohl), Inversion nach
    deshalb/trotzdem/außerdem, Satzklammer bei Perfekt und Modalverben,
-   trennbare Verben, W-Fragen und die Reihenfolge Temporal-Kausal-Modal-Lokal. */
+   trennbare Verben, W-Fragen, die Reihenfolge Temporal-Kausal-Modal-Lokal,
+   Relativsätze, wenn-Sätze vorne, trotz + Genitiv und Infinitivsätze mit zu. */
 import type { WordOrderExercise } from '../types'
 
 export const WORDORDER_EXERCISES: WordOrderExercise[] = [
@@ -94,5 +95,57 @@ export const WORDORDER_EXERCISES: WordOrderExercise[] = [
     solution: 'Ich habe meiner Nachbarin gestern die Schlüssel gegeben.',
     alternatives: ['Ich habe gestern meiner Nachbarin die Schlüssel gegeben.'],
     why: 'Zwei Objekte: Dativ („meiner Nachbarin") vor Akkusativ („die Schlüssel"), das Partizip bleibt am Ende.',
+  },
+  {
+    id: 'wo-13',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Ich habe mich für den Deutschkurs angemeldet.',
+    why: 'Perfekt mit „haben“: Das Reflexivpronomen steht direkt nach dem Hilfsverb, das Partizip „angemeldet“ ganz am Ende.',
+  },
+  {
+    id: 'wo-14',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Nach dem Essen bin ich eine halbe Stunde spazieren gegangen.',
+    alternatives: ['Ich bin nach dem Essen eine halbe Stunde spazieren gegangen.'],
+    why: 'Steht die Zeitangabe vorne, folgt das Verb direkt: „Nach dem Essen bin ich …“. Das Perfekt mit „sein“ bildet eine Klammer bis „gegangen“.',
+  },
+  {
+    id: 'wo-15',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Das ist die Kollegin, die mir immer bei den Formularen hilft.',
+    why: 'Relativsatz: Das Relativpronomen „die“ bezieht sich auf „die Kollegin“, das konjugierte Verb steht am Ende.',
+  },
+  {
+    id: 'wo-16',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Wenn ich am Wochenende Zeit habe, gehe ich im Park joggen.',
+    why: 'Der wenn-Satz steht auf Position 1, deshalb beginnt der Hauptsatz mit dem Verb: „…, gehe ich …“.',
+  },
+  {
+    id: 'wo-17',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Trotz des schlechten Wetters sind wir spazieren gegangen.',
+    alternatives: ['Wir sind trotz des schlechten Wetters spazieren gegangen.'],
+    why: '„trotz“ steht mit Genitiv (des Wetters) und zählt als Position 1: Danach kommt das Verb.',
+  },
+  {
+    id: 'wo-18',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Ich konnte gestern nicht kommen, weil ich einen Termin beim Arzt hatte.',
+    alternatives: ['Weil ich einen Termin beim Arzt hatte, konnte ich gestern nicht kommen.'],
+    why: 'Modalverben stehen in der Vergangenheit im Präteritum („konnte“), im weil-Satz rutscht „hatte“ ans Ende.',
+  },
+  {
+    id: 'wo-19',
+    kind: 'wordorder',
+    instruction: 'Bring die Wörter in die richtige Reihenfolge.',
+    solution: 'Ich freue mich darauf, dich nächste Woche zu sehen.',
+    why: 'Infinitivsatz mit „zu“: „zu sehen“ steht am Satzende, „darauf“ im Hauptsatz kündigt ihn an.',
   },
 ]

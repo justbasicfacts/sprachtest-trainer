@@ -1,8 +1,10 @@
 /* Gezieltes Training - zwei Achsen:
 
    1. "Nach Fähigkeit" (TRAINING_SKILLS): WAS geübt wird - Bildbeschreibung,
-      Vor-/Nachteile, Präpositionen, Nebensätze, Konnektoren. Gedacht für
-      Schwächen, die der Lernplan nach einer Prüfungssimulation genannt hat.
+      Vor-/Nachteile, Präpositionen, Nebensätze, Konnektoren, Zeitformen
+      (Perfekt/Präteritum/Futur), Adjektivendungen, Modalverben, Relativsätze,
+      Vergleiche. Gedacht für Schwächen, die der Lernplan nach einer Prüfungssimulation
+      genannt hat.
    2. "Nach Übungsform" (TRAINING_METHODS): WIE geübt wird - Satzbau-Puzzle,
       Fehlersuche, Diktat, Brief-Baukasten, Dialog, Blitzrunde, Nachsprechen,
       Monolog. Jede Form bringt ihre eigene Bedienung und Auswertung mit.
